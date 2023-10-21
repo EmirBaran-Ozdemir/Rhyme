@@ -1,0 +1,5 @@
+var z = 8;
+var p = 9;
+var z = 4;
+var y = 5;
+exit(z);
