@@ -2,14 +2,16 @@
 #pragma once
 
 enum class TokenType {
-	exit,
-	int_lit,
-	semi,
-	open_paren,
-	close_paren,
-	ident,
-	var,
-	equals
+	Exit,
+	IntegerLiteral,
+	Semicolon,
+	OpenParenthesis,
+	CloseParenthesis,
+	Ident,
+	Variable,
+	Equals,
+	Plus,
+	Minus
 };
 struct Token {
 	TokenType type;
@@ -29,6 +31,8 @@ namespace Compiler
 	private:
 		std::optional<char> Peek(int ahead = 0) const;
 		char Consume();
+		void PushBack(std::vector<Token>& tokens, TokenType token);
+		void PushBack(std::vector<Token>& tokens, TokenType token, std::string& buffer);
 	private:
 		int m_Index = 0;
 		std::string m_Source;

@@ -6,6 +6,7 @@
 #include <sstream>
 #include <optional>
 #include <string>
+#include <cstdlib>
 
 //. Data Structures
 #include <vector>
@@ -14,3 +15,7 @@
 
 //. Exceptions
 #include <stdexcept>
+#include <cassert>
+
+//. Shell
+#include <unistd.h>

@@ -1,5 +1,5 @@
-var z = 8;
-var p = 9;
-var z = 4;
-var y = 5;
-exit(z);
+var a = 8;
+var b = 9;
+var c = 4;
+var d = 2 + 1 + 4 + 1;
+exit(d);

@@ -1,21 +1,22 @@
 ﻿#include "rhypch.h"
 
-#include <Compiler/Tokenizer.h>
-#include <Compiler/Parser.h>
-#include <Compiler/Generator.h>
+#include "Compiler/Tokenizer.h"
+#include "Compiler/Parser.h"
+#include "Compiler/Generator.h"
 
 int main(int argc, char* argv[])
 {
 	std::string contents;
+	std::fstream input_file("/home/Emir/VisualStudio/Rhyme/Rhyme/src/test.rhy", std::ios::in);
 
-	if (argc != 2)
-	{
-		std::cerr << "ERROR::INCORRECT_USAGE" << std::endl;
-		std::cerr << "Correct usage: Rhyme <filename>.rhy" << std::endl;
-		return EXIT_FAILURE;
-	}
+	//if (argc != 2)
+	//{
+	//	std::cerr << "ERROR::INCORRECT_USAGE" << std::endl;
+	//	std::cerr << "Correct usage: Rhyme <filename>.rhy" << std::endl;
+	//	return EXIT_FAILURE;
+	//}
 
-	std::fstream input_file(argv[1], std::ios::in);
+	//std::fstream input_file(argv[1], std::ios::in);
 	if (!input_file.is_open())
 	{
 		std::cerr << "ERROR::FILE_NOT_FOUND" << std::endl;
@@ -58,8 +59,9 @@ int main(int argc, char* argv[])
 			output_file.close();
 		}
 
-		system("nasm -f elf64 out.asm");
-		system("ld out.o -o out");
+		std::system("nasm -f elf64 out.asm");
+		std::system("ld out.o -o out");
+
 	}
 	catch (std::invalid_argument& err)
 	{

@@ -17,8 +17,8 @@ file(GLOB COMPILER_HEADER_FILES "Rhyme/src/Compiler/*.h")
 add_executable(Rhyme
     "Rhyme/src/Rhyme.cpp"
     ${COMPILER_SOURCE_FILES} 
-    ${COMPILER_HEADER_FILES}
- )
+    ${COMPILER_HEADER_FILES} 
+    "Rhyme/src/MemoryPool.cpp")
 
 set(CMAKE_PCH_INSTANTIATE_TEMPLATES ON)
 

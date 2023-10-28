@@ -9,93 +9,116 @@ namespace Compiler {
 	{
 	}
 
-	void Generator::GenerateExpression(const Node::Expr& expr)
+	void Generator::GenerateTerm(const Node::Term* term)
 	{
-		struct ExpressionVisitor {
+		struct TermVisitor {
 			Generator* gen;
-			void operator()(const Node::ExprIntLit& exprIntLit)
+			void operator()(const Node::TermIntLit* termIntLit) const
 			{
-				gen->Move("rax", exprIntLit.int_lit.value.value());
+				gen->Move("rax", termIntLit->intLit.value.value());
 				gen->Push("rax");
 			}
-			void operator()(const Node::ExprIdent& exprIdent)
+			void operator()(const Node::TermIdent* termIdent) const
 			{
-				if (!gen->m_VariableList.contains(exprIdent.ident.value.value()))
+				if (!gen->m_VariableList.contains(termIdent->ident.value.value()))
 				{
-					gen->ThrowErrorEx("Identifier is not declared", exprIdent.ident.value.value());
+					gen->ThrowError("Identifier is not declared", termIdent->ident.value.value());
 				}
-				const auto& var = gen->m_VariableList.at(exprIdent.ident.value.value());
+				const auto& var = gen->m_VariableList.at(termIdent->ident.value.value());
 				std::stringstream offset;
-				offset << "QWORD [rsp + " << (gen->m_StackSize - var.stackLocation - 1) * 8 << "]";
+				offset << "QWORD [rsp + " << (gen->m_StackSize - var.stackLocation - 1) * 8 << "]\n";
 				gen->Push(offset.str());
 			}
+
 		};
-		ExpressionVisitor visitor{.gen = this};
-		std::visit(visitor, expr.var);
+		TermVisitor visitor({.gen = this});
+		std::visit(visitor, term->var);
 	}
 
-	void Generator::GenerateStatement(const Node::Statement& statement) 
+	void Generator::GenerateExpression(const Node::Expr* expr)
+	{
+		struct  ExpressionVisitor
+		{
+			Generator* gen;
+			void operator()(const Node::Term* term) const
+			{
+				gen->GenerateTerm(term);
+			}
+			void operator()(const Node::BinExpr* binExpr) const
+			{
+				gen->GenerateExpression(binExpr->add->lhs);
+				gen->GenerateExpression(binExpr->add->rhs);
+				gen->Pop("rax");
+				gen->Pop("rbx");
+				gen->m_Output << "\tadd rax, rbx\n";
+				gen->Push("rax");
+			}
+		};
+		ExpressionVisitor visitor({ .gen = this });
+		std::visit(visitor, expr->var);
+	}
+
+	void Generator::GenerateStatement(const Node::Statement* statement) 
 	{
 		struct StatementVisitor {
 			Generator* gen;
-			void operator()(const Node::StatementExit& statementExit) 
+			void operator()(const Node::StatementExit* statementExit) const
 			{
-				gen->GenerateExpression(statementExit.expr);
+				gen->GenerateExpression(statementExit->expr);
 				gen->Move("rax", "60");
 				gen->Pop("rdi");
 				gen->m_Output << "    syscall\n";
 			}
-			void operator()(const Node::StatementVar& statementVar)
+			void operator()(const Node::StatementVar* statementVar) const
 			{
-				if (gen->m_VariableList.contains(statementVar.ident.value.value()))
+				if (gen->m_VariableList.contains(statementVar->ident.value.value()))
 				{
-					gen->ThrowErrorEx("Identifier already declared", statementVar.ident.value.value());
+					gen->ThrowError("Identifier already declared", statementVar->ident.value.value());
 				}
-				gen->m_VariableList.insert({ statementVar.ident.value.value(), Variable {.stackLocation = gen->m_StackSize} });
-				gen->GenerateExpression(statementVar.expr);
+				gen->m_VariableList.insert({ statementVar->ident.value.value(), Variable {.stackLocation = gen->m_StackSize} });
+				gen->GenerateExpression(statementVar->expr);
 			}
-			
+
 		};
 
-		StatementVisitor visitor{.gen = this};
-		std::visit(visitor, statement.var);
+		StatementVisitor visitor({.gen = this});
+		std::visit(visitor, statement->var);
 	}
 
 	std::string Generator::GenerateProgram() 
 	{
 			m_Output << "global _start\n_start:\n";
-			for (const Node::Statement& statement : m_Program.statement)
+			for (const Node::Statement* statement : m_Program.statement)
 				GenerateStatement(statement);
 
 			Move("rax", "60");
 			Move("rdi", "0");
-			m_Output << "    syscall\n";
+			m_Output << "\tsyscall\n";
 			return m_Output.str();
-
 	}
 
 	void Generator::Push(const std::string& reg)
 	{
-		m_Output << "	push " << reg << "\n";
+		m_Output << "\tpush " << reg << "\n";
 		m_StackSize++;
 	}
 
 	void Generator::Pop(const std::string& reg)
 	{
-		m_Output << "	pop " << reg << "\n";
+		m_Output << "\tpop " << reg << "\n";
 		m_StackSize--;
 	}
 
 	void Generator::Move(const std::string& reg, const std::string& value)
 	{
-		m_Output << "	mov " << reg << ", " << value << "\n";
+		m_Output << "\tmov " << reg << ", " << value << "\n";
 	}
 
 	void Generator::ThrowError(const std::string& message)
 	{
 		throw std::invalid_argument("ERROR::PARSER::" + message);
 	}
-	void Generator::ThrowErrorEx(const std::string& message, const std::string& ident)
+	void Generator::ThrowError(const std::string& message, const std::string& ident)
 	{
 		throw std::invalid_argument("ERROR::PARSER::" + message + ": " + ident);
 	}

@@ -20,7 +20,14 @@ namespace Compiler
 		m_CurrentPosition++;
 		return m_Source[m_Index++];
 	}
-
+	void Tokenizer::PushBack(std::vector<Token>& tokens, TokenType tokenType)
+	{
+		tokens.push_back({ .type = tokenType, .line = m_CurrentLine, .position = m_CurrentPosition });
+	}
+	void Tokenizer::PushBack(std::vector<Token>& tokens, TokenType tokenType, std::string& buffer)
+	{
+		tokens.push_back({ .type = tokenType, .value = buffer, .line = m_CurrentLine, .position = m_CurrentPosition });
+	}
 	std::vector<Token> Tokenizer::Tokenize(std::string source)
 	{
 		std::vector<Token> tokens;
@@ -38,29 +45,39 @@ namespace Compiler
 				}
 				if (buffer == "exit")
 				{
-					tokens.push_back({ .type = TokenType::exit, .line = m_CurrentLine, .position = m_CurrentPosition });
+					PushBack(tokens, TokenType::Exit);
 					buffer.clear();
 				}
 				else if (buffer == "var")
 				{
-					tokens.push_back({ .type = TokenType::var, .line = m_CurrentLine, .position = m_CurrentPosition });
+					PushBack(tokens, TokenType::Variable);
 					buffer.clear();
 				}
 				else
 				{
-					tokens.push_back({ .type = TokenType::ident, .value = buffer, .line = m_CurrentLine, .position = m_CurrentPosition });
+					PushBack(tokens, TokenType::Ident, buffer);
 					buffer.clear();
 				}
 			}
 			else if (Peek().value() == '(')
 			{
 				Consume();
-				tokens.push_back({ .type = TokenType::open_paren, .line = m_CurrentLine, .position = m_CurrentPosition });
+				PushBack(tokens, TokenType::OpenParenthesis);
 			}
 			else if (Peek().value() == ')')
 			{
 				Consume();
-				tokens.push_back({ .type = TokenType::close_paren, .line = m_CurrentLine, .position = m_CurrentPosition });
+				PushBack(tokens, TokenType::CloseParenthesis);
+			}
+			else if (Peek().value() == '+')
+			{
+				Consume();
+				PushBack(tokens, TokenType::Plus);
+			}
+			else if (Peek().value() == '-')
+			{
+				Consume();
+				PushBack(tokens, TokenType::Plus);
 			}
 			else if (std::isdigit(Peek().value()))
 			{
@@ -69,17 +86,17 @@ namespace Compiler
 				{
 					buffer.push_back(Consume());
 				}
-				tokens.push_back({ .type = TokenType::int_lit, .value = buffer, .line = m_CurrentLine, .position = m_CurrentPosition });
+				PushBack(tokens, TokenType::IntegerLiteral, buffer);
 				buffer.clear();
 			}
 			else if (Peek().value() == '=')
 			{
 				Consume();
-				tokens.push_back({ .type = TokenType::equals, .line = m_CurrentLine, .position = m_CurrentPosition });
+				PushBack(tokens, TokenType::Equals);
 			}
 			else if (Peek().value() == ';')
 			{
-				tokens.push_back({ .type = TokenType::semi, .line = m_CurrentLine, .position = m_CurrentPosition });
+				PushBack(tokens,TokenType::Semicolon );
 				Consume();
 			}
 			else if (Peek().value() == '\n')
