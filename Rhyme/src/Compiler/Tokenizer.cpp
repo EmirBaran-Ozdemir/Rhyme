@@ -20,14 +20,39 @@ namespace Compiler
 		m_CurrentPosition++;
 		return m_Source[m_Index++];
 	}
+	
 	void Tokenizer::PushBack(std::vector<Token>& tokens, TokenType tokenType)
 	{
 		tokens.push_back({ .type = tokenType, .line = m_CurrentLine, .position = m_CurrentPosition });
 	}
+	
 	void Tokenizer::PushBack(std::vector<Token>& tokens, TokenType tokenType, std::string& buffer)
 	{
 		tokens.push_back({ .type = tokenType, .value = buffer, .line = m_CurrentLine, .position = m_CurrentPosition });
 	}
+
+	bool Tokenizer::IsBinOperator(TokenType type)
+	{
+		switch (type)
+		{
+			case TokenType::Star:		return true;
+			case TokenType::Plus:		return true;
+			
+			default: return false;
+		}
+	}
+
+	std::optional<int> Tokenizer::GetBinaryPrecedence(TokenType type)
+	{
+		switch (type)
+		{
+			case TokenType::Plus:		return 0;
+			case TokenType::Star:		return 1;
+
+			default: return std::nullopt;
+		}
+	}
+	
 	std::vector<Token> Tokenizer::Tokenize(std::string source)
 	{
 		std::vector<Token> tokens;
@@ -74,10 +99,10 @@ namespace Compiler
 				Consume();
 				PushBack(tokens, TokenType::Plus);
 			}
-			else if (Peek().value() == '-')
+			else if (Peek().value() == '*')
 			{
 				Consume();
-				PushBack(tokens, TokenType::Plus);
+				PushBack(tokens, TokenType::Star);
 			}
 			else if (std::isdigit(Peek().value()))
 			{

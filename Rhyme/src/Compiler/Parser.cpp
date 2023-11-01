@@ -32,44 +32,68 @@ namespace Compiler {
 		return !Peek().has_value() || Peek().value().type != type;
 	}
 
-	std::optional<Node::Expr*> Parser::ParseExpr()
+	std::optional<Node::Expr*> Parser::ParseExpr(int minPrecedence)
 	{
-		if (auto term = ParseTerm())
+		std::optional<Node::Term*> termLhs = ParseTerm();
+		if (!termLhs.has_value())
+			return std::nullopt;
+
+		auto exprLhs = m_Pool.Allocate<Node::Expr>();
+		exprLhs->var = termLhs.value();
+		while (true)
 		{
-			if (FalseCheck(TokenType::Plus))
+			std::optional<Token> currentToken = Peek();
+			std::optional<int> precedence;
+			if (currentToken.has_value())
 			{
-				auto expr = m_Pool.Allocate<Node::Expr>();
-				expr->var = term.value();
-				return expr;
-			}
-			auto plus = Consume(); // +
-			auto binExpr = m_Pool.Allocate<Node::BinExpr>();
-			auto binExprAdd = m_Pool.Allocate<Node::BinExprAddition>();
-			auto lhs = m_Pool.Allocate<Node::Expr>();
-			lhs->var = term.value();
-			binExprAdd->lhs = lhs;
-			if (auto rhs = ParseExpr())
-			{
-				binExprAdd->rhs = rhs.value();
-				binExpr->add = binExprAdd;
-				auto expr = m_Pool.Allocate<Node::Expr>();
-				expr->var = binExpr;
-				return expr;
+				precedence = Tokenizer::GetBinaryPrecedence(currentToken->type);
+				if (!precedence.has_value() || precedence < minPrecedence)
+					break;
 			}
 			else
-				ThrowError("Expected expression");
+				break;
+
+			Token op = Consume();
+			int nextMinPrec = precedence.value() + 1;
+			auto exprRhs = ParseExpr(nextMinPrec);
+			if (!exprRhs.has_value())
+				ThrowError("No right hand side");
+
+			auto binExpr = m_Pool.Allocate<Node::BinExpr>();
+			auto exprLhsTemp = m_Pool.Allocate<Node::Expr>();
+			switch (op.type)
+			{
+				case TokenType::Plus:
+				{
+					auto binExprAdd = m_Pool.Allocate<Node::BinExprAddition>();
+					exprLhsTemp->var = exprLhs->var;
+					binExprAdd->lhs = exprLhsTemp;
+					binExprAdd->rhs = exprRhs.value();
+					binExpr->binExprType = binExprAdd;
+					break;
+				}
+				case TokenType::Star:
+				{
+					auto binExprMulti = m_Pool.Allocate<Node::BinExprMultiplication>();
+					exprLhsTemp->var = exprLhs->var;
+					binExprMulti->lhs = exprLhsTemp;
+					binExprMulti->rhs = exprRhs.value();
+					binExpr->binExprType = binExprMulti;
+					break;
+				}
+			}
+			exprLhs->var = binExpr;
 		}
-		else
-			return std::nullopt;
+		return exprLhs;
 	}
 
 	std::optional<Node::Term*> Parser::ParseTerm()
 	{
 		if (Check(TokenType::IntegerLiteral))
 		{
-			auto termIntLit =m_Pool.Allocate<Node::TermIntLit>();
+			auto termIntLit = m_Pool.Allocate<Node::TermIntLit>();
 			termIntLit->intLit = Consume();
-			auto term= m_Pool.Allocate<Node::Term>();
+			auto term = m_Pool.Allocate<Node::Term>();
 			term->var = termIntLit;
 			return term;
 		}

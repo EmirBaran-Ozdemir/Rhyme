@@ -17,13 +17,13 @@ namespace Node {
 		Expr* rhs;
 	};
 
-	//struct BinExprMultiplication {
-	//	Expr* lhs;
-	//	Expr* rhs;
-	//};
+	struct BinExprMultiplication {
+		Expr* lhs;
+		Expr* rhs;
+	};
 
 	struct BinExpr {
-		BinExprAddition* add;
+		std::variant<BinExprAddition*, BinExprMultiplication*> binExprType;
 	};
 
 	struct Term {
@@ -56,12 +56,12 @@ namespace Compiler
 	{
 	public:
 		Parser(const std::vector<Token>& tokens);
-		std::optional<Node::Expr*> ParseExpr();
+		std::optional<Node::Expr*> ParseExpr(int minPrecedence = 0);
 		std::optional<Node::Term*> ParseTerm();
 		std::optional<Node::Statement*> ParseStatement();
 		std::optional<Node::Program> ParseProgram();
 	private:
-		std::optional<Token> Peek(int ahead = 0) const;
+		std::optional<Token> Peek(int offset = 0) const;
 		Token Consume();
 		const bool Check(TokenType type, int offset) const;
 		const bool FalseCheck(TokenType type) const;

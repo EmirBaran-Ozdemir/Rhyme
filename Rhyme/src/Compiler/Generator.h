@@ -13,6 +13,7 @@ namespace Compiler {
 	public:
 		Generator(const Node::Program& program);
 		void GenerateExpression(const Node::Expr* expr);
+		void GenerateBinExpression(const Node::BinExpr* expr);
 		void GenerateTerm(const Node::Term* term);
 		void GenerateStatement(const Node::Statement* statement);
 		std::string GenerateProgram();

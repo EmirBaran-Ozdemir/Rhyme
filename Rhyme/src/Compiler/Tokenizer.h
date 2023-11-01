@@ -11,8 +11,9 @@ enum class TokenType {
 	Variable,
 	Equals,
 	Plus,
-	Minus
+	Star
 };
+
 struct Token {
 	TokenType type;
 	std::optional<std::string> value {};
@@ -28,6 +29,8 @@ namespace Compiler
 	public:
 		Tokenizer(const std::string& src);
 		std::vector<Token> Tokenize(std::string source);
+		static bool IsBinOperator(TokenType type);
+		static std::optional<int> GetBinaryPrecedence(TokenType type);
 	private:
 		std::optional<char> Peek(int ahead = 0) const;
 		char Consume();

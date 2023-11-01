@@ -35,6 +35,33 @@ namespace Compiler {
 		std::visit(visitor, term->var);
 	}
 
+	void Generator::GenerateBinExpression(const Node::BinExpr* expr)
+	{
+		struct BinExprVisitor
+		{
+			Generator* gen;
+			void operator()(const Node::BinExprAddition* add)
+			{
+				gen->GenerateExpression(add->lhs);
+				gen->GenerateExpression(add->rhs);
+				gen->Pop("rax");
+				gen->Pop("rbx");
+				gen->m_Output << "\tadd rax, rbx\n";
+				gen->Push("rax");
+			}
+			void operator()(const Node::BinExprMultiplication* multi)
+			{
+				gen->GenerateExpression(multi->lhs);
+				gen->GenerateExpression(multi->rhs);
+				gen->Pop("rax");
+				gen->Pop("rbx");
+				gen->m_Output << "\tmul rbx\n";
+				gen->Push("rax");
+			}
+		};
+		BinExprVisitor visitor({ .gen = this });
+		std::visit(visitor, expr->binExprType);
+	}
 	void Generator::GenerateExpression(const Node::Expr* expr)
 	{
 		struct  ExpressionVisitor
@@ -46,17 +73,13 @@ namespace Compiler {
 			}
 			void operator()(const Node::BinExpr* binExpr) const
 			{
-				gen->GenerateExpression(binExpr->add->lhs);
-				gen->GenerateExpression(binExpr->add->rhs);
-				gen->Pop("rax");
-				gen->Pop("rbx");
-				gen->m_Output << "\tadd rax, rbx\n";
-				gen->Push("rax");
+				gen->GenerateBinExpression(binExpr);
 			}
 		};
 		ExpressionVisitor visitor({ .gen = this });
 		std::visit(visitor, expr->var);
 	}
+
 
 	void Generator::GenerateStatement(const Node::Statement* statement) 
 	{
