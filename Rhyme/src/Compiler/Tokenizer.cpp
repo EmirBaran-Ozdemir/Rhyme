@@ -37,6 +37,8 @@ namespace Compiler
 		{
 			case TokenType::Star:		return true;
 			case TokenType::Plus:		return true;
+			case TokenType::Minus:		return true;
+			case TokenType::Slash:		return true;
 			
 			default: return false;
 		}
@@ -48,6 +50,8 @@ namespace Compiler
 		{
 			case TokenType::Plus:		return 0;
 			case TokenType::Star:		return 1;
+			case TokenType::Minus:		return 0;
+			case TokenType::Slash:		return 1;
 
 			default: return std::nullopt;
 		}
@@ -103,6 +107,16 @@ namespace Compiler
 			{
 				Consume();
 				PushBack(tokens, TokenType::Star);
+			}
+			else if (Peek().value() == '-')
+			{
+				Consume();
+				PushBack(tokens, TokenType::Minus);
+			}
+			else if (Peek().value() == '/')
+			{
+				Consume();
+				PushBack(tokens, TokenType::Slash);
 			}
 			else if (std::isdigit(Peek().value()))
 			{

@@ -12,6 +12,11 @@ namespace Node {
 	};
 
 	struct Expr;
+
+	struct TermParenthesis {
+		Expr* expr;
+	};
+
 	struct BinExprAddition {
 		Expr* lhs;
 		Expr* rhs;
@@ -21,18 +26,29 @@ namespace Node {
 		Expr* lhs;
 		Expr* rhs;
 	};
+	
+	struct BinExprSubtraction {
+		Expr* lhs;
+		Expr* rhs;
+	};
+
+	struct BinExprDivision {
+		Expr* lhs;
+		Expr* rhs;
+	};
 
 	struct BinExpr {
-		std::variant<BinExprAddition*, BinExprMultiplication*> binExprType;
+		std::variant<BinExprAddition*, BinExprMultiplication*, BinExprSubtraction* ,BinExprDivision*> binExprType;
 	};
 
 	struct Term {
-		std::variant<TermIdent*, TermIntLit*> var;
+		std::variant<TermIdent*, TermIntLit*, TermParenthesis*> var;
 	};
 
 	struct Expr {
 		std::variant<Term*, BinExpr*> var;
 	};
+
 	struct StatementExit {
 		Expr* expr;
 	};

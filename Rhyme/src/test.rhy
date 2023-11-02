@@ -1,5 +1,5 @@
 var a = 8;
 var b = 9;
 var c = 4;
-var d = 3 + 2 * 3 + 2 * 2; 
+var d = (10 - 4) * 6 - 3 / 3; 
 exit(d);

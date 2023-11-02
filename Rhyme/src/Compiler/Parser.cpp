@@ -81,6 +81,24 @@ namespace Compiler {
 					binExpr->binExprType = binExprMulti;
 					break;
 				}
+				case TokenType::Minus:
+				{
+					auto binExprSubtraction = m_Pool.Allocate<Node::BinExprSubtraction>();
+					exprLhsTemp->var = exprLhs->var;
+					binExprSubtraction->lhs = exprLhsTemp;
+					binExprSubtraction->rhs = exprRhs.value();
+					binExpr->binExprType = binExprSubtraction;
+					break;
+				}
+				case TokenType::Slash:
+				{
+					auto binExprDiv = m_Pool.Allocate<Node::BinExprDivision>();
+					exprLhsTemp->var = exprLhs->var;
+					binExprDiv->lhs = exprLhsTemp;
+					binExprDiv->rhs = exprRhs.value();
+					binExpr->binExprType = binExprDiv;
+					break;
+				}
 			}
 			exprLhs->var = binExpr;
 		}
@@ -103,6 +121,22 @@ namespace Compiler {
 			termIdent->ident = Consume();
 			auto term = m_Pool.Allocate<Node::Term>();
 			term->var = termIdent;
+			return term;
+		}
+		else if (Check(TokenType::OpenParenthesis))
+		{
+			Consume();
+			auto expr = ParseExpr();
+			if (!expr.has_value())
+				ThrowError("Expected expression");
+			if (Check(TokenType::CloseParenthesis))
+				Consume();
+			else
+				ThrowError("Missing ')'");
+			auto termParenthesis = m_Pool.Allocate<Node::TermParenthesis>();
+			termParenthesis->expr = expr.value();
+			auto term = m_Pool.Allocate<Node::Term>();
+			term->var = termParenthesis;
 			return term;
 		}
 		else

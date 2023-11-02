@@ -29,9 +29,13 @@ namespace Compiler {
 				offset << "QWORD [rsp + " << (gen->m_StackSize - var.stackLocation - 1) * 8 << "]\n";
 				gen->Push(offset.str());
 			}
+			void operator()(const Node::TermParenthesis* termParenthesis) const
+			{
+				gen->GenerateExpression(termParenthesis->expr);
+			}
 
 		};
-		TermVisitor visitor({.gen = this});
+		TermVisitor visitor({ .gen = this });
 		std::visit(visitor, term->var);
 	}
 
@@ -42,8 +46,8 @@ namespace Compiler {
 			Generator* gen;
 			void operator()(const Node::BinExprAddition* add)
 			{
-				gen->GenerateExpression(add->lhs);
 				gen->GenerateExpression(add->rhs);
+				gen->GenerateExpression(add->lhs);
 				gen->Pop("rax");
 				gen->Pop("rbx");
 				gen->m_Output << "\tadd rax, rbx\n";
@@ -51,11 +55,29 @@ namespace Compiler {
 			}
 			void operator()(const Node::BinExprMultiplication* multi)
 			{
-				gen->GenerateExpression(multi->lhs);
 				gen->GenerateExpression(multi->rhs);
+				gen->GenerateExpression(multi->lhs);
 				gen->Pop("rax");
 				gen->Pop("rbx");
 				gen->m_Output << "\tmul rbx\n";
+				gen->Push("rax");
+			}
+			void operator()(const Node::BinExprSubtraction* subtr)
+			{
+				gen->GenerateExpression(subtr->rhs);
+				gen->GenerateExpression(subtr->lhs);
+				gen->Pop("rax");
+				gen->Pop("rbx");
+				gen->m_Output << "\tsub rax, rbx\n";
+				gen->Push("rax");
+			}
+			void operator()(const Node::BinExprDivision* div)
+			{
+				gen->GenerateExpression(div->rhs);
+				gen->GenerateExpression(div->lhs);
+				gen->Pop("rax");
+				gen->Pop("rbx");
+				gen->m_Output << "\tidiv rbx\n";
 				gen->Push("rax");
 			}
 		};
@@ -81,7 +103,7 @@ namespace Compiler {
 	}
 
 
-	void Generator::GenerateStatement(const Node::Statement* statement) 
+	void Generator::GenerateStatement(const Node::Statement* statement)
 	{
 		struct StatementVisitor {
 			Generator* gen;
@@ -104,20 +126,20 @@ namespace Compiler {
 
 		};
 
-		StatementVisitor visitor({.gen = this});
+		StatementVisitor visitor({ .gen = this });
 		std::visit(visitor, statement->var);
 	}
 
-	std::string Generator::GenerateProgram() 
+	std::string Generator::GenerateProgram()
 	{
-			m_Output << "global _start\n_start:\n";
-			for (const Node::Statement* statement : m_Program.statement)
-				GenerateStatement(statement);
+		m_Output << "global _start\n_start:\n";
+		for (const Node::Statement* statement : m_Program.statement)
+			GenerateStatement(statement);
 
-			Move("rax", "60");
-			Move("rdi", "0");
-			m_Output << "\tsyscall\n";
-			return m_Output.str();
+		Move("rax", "60");
+		Move("rdi", "0");
+		m_Output << "\tsyscall\n";
+		return m_Output.str();
 	}
 
 	void Generator::Push(const std::string& reg)

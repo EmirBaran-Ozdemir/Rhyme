@@ -11,7 +11,10 @@ enum class TokenType {
 	Variable,
 	Equals,
 	Plus,
-	Star
+	Star,
+	Minus,
+	Slash,
+	Backslash
 };
 
 struct Token {
