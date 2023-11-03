@@ -26,7 +26,7 @@ namespace Node {
 		Expr* lhs;
 		Expr* rhs;
 	};
-	
+
 	struct BinExprSubtraction {
 		Expr* lhs;
 		Expr* rhs;
@@ -37,8 +37,18 @@ namespace Node {
 		Expr* rhs;
 	};
 
+	struct BinExprLessThan {
+		Expr* lhs;
+		Expr* rhs;
+	};
+
+	struct BinExprGreaterThan {
+		Expr* lhs;
+		Expr* rhs;
+	};
+
 	struct BinExpr {
-		std::variant<BinExprAddition*, BinExprMultiplication*, BinExprSubtraction* ,BinExprDivision*> binExprType;
+		std::variant<BinExprAddition*, BinExprMultiplication*, BinExprSubtraction*, BinExprDivision*, BinExprLessThan*, BinExprGreaterThan*> binExprType;
 	};
 
 	struct Term {

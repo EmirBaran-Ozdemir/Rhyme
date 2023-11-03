@@ -61,6 +61,9 @@ int main(int argc, char* argv[])
 
 		std::system("nasm -f elf64 out.asm");
 		std::system("ld out.o -o out");
+		int exitCode = std::system("./out");
+
+		std::cout << "Exit Status: " << WEXITSTATUS(exitCode) << std::endl;
 
 	}
 	catch (std::invalid_argument& err)

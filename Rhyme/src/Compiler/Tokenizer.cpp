@@ -20,12 +20,12 @@ namespace Compiler
 		m_CurrentPosition++;
 		return m_Source[m_Index++];
 	}
-	
+
 	void Tokenizer::PushBack(std::vector<Token>& tokens, TokenType tokenType)
 	{
 		tokens.push_back({ .type = tokenType, .line = m_CurrentLine, .position = m_CurrentPosition });
 	}
-	
+
 	void Tokenizer::PushBack(std::vector<Token>& tokens, TokenType tokenType, std::string& buffer)
 	{
 		tokens.push_back({ .type = tokenType, .value = buffer, .line = m_CurrentLine, .position = m_CurrentPosition });
@@ -35,11 +35,13 @@ namespace Compiler
 	{
 		switch (type)
 		{
-			case TokenType::Star:		return true;
-			case TokenType::Plus:		return true;
-			case TokenType::Minus:		return true;
-			case TokenType::Slash:		return true;
-			
+			case TokenType::Star:			return true;
+			case TokenType::Plus:			return true;
+			case TokenType::Minus:			return true;
+			case TokenType::Slash:			return true;
+			case TokenType::GreaterThan:	return true;
+			case TokenType::LessThan:		return true;
+
 			default: return false;
 		}
 	}
@@ -48,15 +50,17 @@ namespace Compiler
 	{
 		switch (type)
 		{
-			case TokenType::Plus:		return 0;
-			case TokenType::Star:		return 1;
-			case TokenType::Minus:		return 0;
-			case TokenType::Slash:		return 1;
+			case TokenType::GreaterThan:	return 0;
+			case TokenType::LessThan:		return 0;
+			case TokenType::Plus:			return 1;
+			case TokenType::Minus:			return 1;
+			case TokenType::Star:			return 2;
+			case TokenType::Slash:			return 2;
 
 			default: return std::nullopt;
 		}
 	}
-	
+
 	std::vector<Token> Tokenizer::Tokenize(std::string source)
 	{
 		std::vector<Token> tokens;
@@ -118,6 +122,16 @@ namespace Compiler
 				Consume();
 				PushBack(tokens, TokenType::Slash);
 			}
+			else if (Peek().value() == '<')
+			{
+				Consume();
+				PushBack(tokens, TokenType::LessThan);
+			}
+			else if (Peek().value() == '>')
+			{
+				Consume();
+				PushBack(tokens, TokenType::GreaterThan);
+			}
 			else if (std::isdigit(Peek().value()))
 			{
 				buffer.push_back(Consume());
@@ -135,7 +149,7 @@ namespace Compiler
 			}
 			else if (Peek().value() == ';')
 			{
-				PushBack(tokens,TokenType::Semicolon );
+				PushBack(tokens, TokenType::Semicolon);
 				Consume();
 			}
 			else if (Peek().value() == '\n')

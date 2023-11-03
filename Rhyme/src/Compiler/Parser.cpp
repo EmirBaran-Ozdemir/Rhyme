@@ -99,6 +99,24 @@ namespace Compiler {
 					binExpr->binExprType = binExprDiv;
 					break;
 				}
+				case TokenType::LessThan:
+				{
+					auto binExprLess = m_Pool.Allocate<Node::BinExprLessThan>();
+					exprLhsTemp->var = exprLhs->var;
+					binExprLess->lhs = exprLhsTemp;
+					binExprLess->rhs = exprRhs.value();
+					binExpr->binExprType = binExprLess;
+					break;
+				}
+				case TokenType::GreaterThan:
+				{
+					auto binExprGreater = m_Pool.Allocate<Node::BinExprGreaterThan>();
+					exprLhsTemp->var = exprLhs->var;
+					binExprGreater->lhs = exprLhsTemp;
+					binExprGreater->rhs = exprRhs.value();
+					binExpr->binExprType = binExprGreater;
+					break;
+				}
 			}
 			exprLhs->var = binExpr;
 		}

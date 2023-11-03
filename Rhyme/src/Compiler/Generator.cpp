@@ -80,6 +80,26 @@ namespace Compiler {
 				gen->m_Output << "\tidiv rbx\n";
 				gen->Push("rax");
 			}
+			void operator()(const Node::BinExprLessThan* less)
+			{
+				gen->GenerateExpression(less->rhs);
+				gen->GenerateExpression(less->lhs);
+				gen->Pop("rax");
+				gen->Pop("rbx");
+				gen->m_Output << "\tcmp rax, rbx\n";
+				gen->m_Output << "\tsetl al\n";
+				gen->Push("rax");
+			}
+			void operator()(const Node::BinExprGreaterThan* greater)
+			{
+				gen->GenerateExpression(greater->rhs);
+				gen->GenerateExpression(greater->lhs);
+				gen->Pop("rax");
+				gen->Pop("rbx");
+				gen->m_Output << "\tcmp rbx, rax\n";
+				gen->m_Output << "\tsetl al\n";
+				gen->Push("rax");
+			}
 		};
 		BinExprVisitor visitor({ .gen = this });
 		std::visit(visitor, expr->binExprType);

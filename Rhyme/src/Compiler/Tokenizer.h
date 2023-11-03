@@ -14,7 +14,9 @@ enum class TokenType {
 	Star,
 	Minus,
 	Slash,
-	Backslash
+	Backslash,
+	LessThan,
+	GreaterThan
 };
 
 struct Token {
