@@ -1,3 +1,5 @@
-var e = 4 + 2;
-var x = 4;
-exit(e);
+var a = 9;
+var b = 15;
+if (b<a) {exit(3);};
+if (4<a) {exit(4);};
+exit(5);

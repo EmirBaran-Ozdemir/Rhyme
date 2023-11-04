@@ -12,7 +12,7 @@ namespace Node {
 	};
 
 	struct Expr;
-
+	struct Statement;
 	struct TermParenthesis {
 		Expr* expr;
 	};
@@ -68,8 +68,13 @@ namespace Node {
 		Expr* expr;
 	};
 
+	struct StatementIf {
+		Expr* expr;
+		Statement* statement;
+	};
+
 	struct Statement {
-		std::variant<StatementExit*, StatementVar*> var;
+		std::variant<StatementExit*, StatementVar*, StatementIf*> var;
 	};
 
 	struct Program {

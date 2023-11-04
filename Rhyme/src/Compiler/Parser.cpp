@@ -190,6 +190,40 @@ namespace Compiler {
 
 			statement->var = exitStatement;
 		}
+		else if (Check(TokenType::If))
+		{
+			Consume(); // Consume 'if'
+
+			if (FalseCheck(TokenType::OpenParenthesis))
+				ThrowError("Missing open parenthesis");
+			Consume(); // Consume '('
+
+			Node::StatementIf* ifStatement = static_cast<Node::StatementIf*>(m_Pool.Allocate<Node::StatementIf>());
+			auto expr = ParseExpr();
+			if(!expr.has_value())
+				ThrowError("Invalid expression", *this);
+
+			ifStatement->expr = expr.value();
+
+			if (FalseCheck(TokenType::CloseParenthesis))
+				ThrowError("Missing close parenthesis");
+			Consume(); // Consume ')'
+
+			if (FalseCheck(TokenType::OpenCurlyParenthesis))
+				ThrowError("Missing open curly parenthesis");
+			Consume(); // Consume '{'
+
+			auto innerStatement = ParseStatement(); //Name this something else
+			if (!innerStatement.has_value())
+				ThrowError("Invalid statement", *this);
+
+			if (FalseCheck(TokenType::CloseCurlyParenthesis))
+				ThrowError("Missing close curly parenthesis");
+			Consume(); // Consume '}'
+
+			ifStatement->statement = innerStatement.value();
+			statement->var = ifStatement;
+		}
 		else if (Check(TokenType::Variable) && Check(TokenType::Ident, 1) && Check(TokenType::Equals, 2)) {
 			Consume(); // Consume 'var'
 

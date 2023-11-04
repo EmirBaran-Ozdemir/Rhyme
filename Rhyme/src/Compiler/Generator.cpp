@@ -87,8 +87,16 @@ namespace Compiler {
 				gen->Pop("rax");
 				gen->Pop("rbx");
 				gen->m_Output << "\tcmp rax, rbx\n";
-				gen->m_Output << "\tsetl al\n";
-				gen->Push("rax");
+				if (gen->m_StatementIf)
+				{
+					gen->m_Output << "\tjl if" << gen->m_IfCount << "\n";
+					gen->m_Output << "\tjmp end_if" << gen->m_IfCount << "\n";
+				}
+				else
+				{
+					gen->m_Output << "\tsetl al\n";
+					gen->Push("rax");
+				}
 			}
 			void operator()(const Node::BinExprGreaterThan* greater)
 			{
@@ -96,9 +104,18 @@ namespace Compiler {
 				gen->GenerateExpression(greater->lhs);
 				gen->Pop("rax");
 				gen->Pop("rbx");
-				gen->m_Output << "\tcmp rbx, rax\n";
-				gen->m_Output << "\tsetl al\n";
-				gen->Push("rax");
+				gen->m_Output << "\tcmp rax, rbx\n";
+				if (gen->m_StatementIf)
+				{
+					gen->m_Output << "\tjg if" << gen->m_IfCount << "\n";
+					gen->m_Output << "\tjmp end_if" << gen->m_IfCount << "\n";
+				}
+				else
+				{
+					gen->m_Output << "\tsetg al\n";
+					gen->Push("rax");
+				}
+
 			}
 		};
 		BinExprVisitor visitor({ .gen = this });
@@ -132,7 +149,7 @@ namespace Compiler {
 				gen->GenerateExpression(statementExit->expr);
 				gen->Move("rax", "60");
 				gen->Pop("rdi");
-				gen->m_Output << "    syscall\n";
+				gen->m_Output << "\tsyscall\n";
 			}
 			void operator()(const Node::StatementVar* statementVar) const
 			{
@@ -143,7 +160,16 @@ namespace Compiler {
 				gen->m_VariableList.insert({ statementVar->ident.value.value(), Variable {.stackLocation = gen->m_StackSize} });
 				gen->GenerateExpression(statementVar->expr);
 			}
-
+			void operator()(const Node::StatementIf* statementIf) const
+			{
+				gen->m_IfCount++;
+				gen->m_StatementIf = true;
+				gen->GenerateExpression(statementIf->expr);
+				gen->m_Output << "if" << gen->m_IfCount << ":\n";
+				gen->GenerateStatement(statementIf->statement);
+				gen->m_Output << "end_if" << gen->m_IfCount << ":\n";
+				gen->m_StatementIf = false;
+			}
 		};
 
 		StatementVisitor visitor({ .gen = this });

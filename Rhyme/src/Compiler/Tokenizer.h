@@ -4,11 +4,15 @@
 enum class TokenType {
 	Exit,
 	IntegerLiteral,
+	Ident,
+	Variable,
+	If,
+	// Characters
 	Semicolon,
 	OpenParenthesis,
 	CloseParenthesis,
-	Ident,
-	Variable,
+	OpenCurlyParenthesis,
+	CloseCurlyParenthesis,
 	Equals,
 	Plus,
 	Star,

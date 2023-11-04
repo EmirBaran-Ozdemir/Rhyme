@@ -28,6 +28,8 @@ namespace Compiler {
 		const Node::Program m_Program;
 		std::stringstream m_Output;
 		size_t m_StackSize = 0;
+		size_t m_IfCount, m_ElseCount = 0;
+		bool m_StatementIf;
 		std::unordered_map<std::string, Variable> m_VariableList{};
 	};
 }

@@ -86,6 +86,11 @@ namespace Compiler
 					PushBack(tokens, TokenType::Variable);
 					buffer.clear();
 				}
+				else if (buffer == "if")
+				{
+					PushBack(tokens, TokenType::If);
+					buffer.clear();
+				}
 				else
 				{
 					PushBack(tokens, TokenType::Ident, buffer);
@@ -101,6 +106,16 @@ namespace Compiler
 			{
 				Consume();
 				PushBack(tokens, TokenType::CloseParenthesis);
+			}
+			else if (Peek().value() == '{')
+			{
+				Consume();
+				PushBack(tokens, TokenType::OpenCurlyParenthesis);
+			}
+			else if (Peek().value() == '}')
+			{
+				Consume();
+				PushBack(tokens, TokenType::CloseCurlyParenthesis);
 			}
 			else if (Peek().value() == '+')
 			{
