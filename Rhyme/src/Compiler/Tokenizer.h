@@ -22,7 +22,7 @@ enum class TokenType {
 	Slash,
 	Backslash,
 	LessThan,
-	GreaterThan
+	GreaterThan,
 };
 
 struct Token {

@@ -133,9 +133,9 @@ namespace Compiler {
 					gen->m_Output << "\tsetl al\n";
 					gen->Push("rax");
 				}
-
 			}
 		};
+
 		BinExprVisitor visitor({ .gen = this });
 		std::visit(visitor, expr->binExprType);
 	}
@@ -197,8 +197,8 @@ namespace Compiler {
 				gen->m_StatementIf = true;
 				gen->GenerateExpression(statementIf->expr);
 				gen->GenerateScope(statementIf->scope);
-				if (!statementIf->hasElse)
-					gen->m_Output << "L" << gen->m_EndIf << ":\n";
+				if (statementIf->hasElse)
+					gen->m_Output << "\tjmp L" << gen->m_EndIf << "\n";
 				gen->m_StatementIf = false;
 			}
 			void operator()(const Node::StatementElse* statementElse) const
@@ -207,6 +207,7 @@ namespace Compiler {
 					gen->m_Output << ";Else\n";
 				gen->m_Output << "L" << gen->m_IfCount << ":\n";
 				gen->GenerateScope(statementElse->scope);
+				gen->m_Output << "L" << gen->m_EndIf << ":\n";
 			}
 			void operator()(const Node::StatementScope* statementScope) const
 			{

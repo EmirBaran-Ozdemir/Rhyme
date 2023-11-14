@@ -140,7 +140,14 @@ namespace Compiler
 			else if (Peek().value() == '/')
 			{
 				Consume();
-				PushBack(tokens, TokenType::Slash);
+				if (Peek().value() == '/')
+				{
+					Consume();
+					while (Peek().has_value() && Peek().value() != '\n')
+						Consume();
+				}
+				else
+					PushBack(tokens, TokenType::Slash);
 			}
 			else if (Peek().value() == '<')
 			{

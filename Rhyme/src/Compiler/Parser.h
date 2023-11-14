@@ -67,7 +67,7 @@ namespace Node {
 		Token ident;
 		Expr* expr;
 	};
-	
+
 	struct StatementScope {
 		std::vector<Statement*> statement;
 	};

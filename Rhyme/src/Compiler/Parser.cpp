@@ -255,7 +255,7 @@ namespace Compiler {
 			{
 				ifStatement->hasElse = true;
 			}
-			
+
 			statement->var = ifStatement;
 		}
 
@@ -277,7 +277,7 @@ namespace Compiler {
 			statement->var = elseStatement;
 
 		}
-		else if (Check(TokenType::OpenCurlyParenthesis)) //! SCOPE
+		else if (Check(TokenType::OpenCurlyParenthesis)) //! Scope
 		{
 			if (auto scopeStatement = ParseScope())
 			{
@@ -298,7 +298,8 @@ namespace Compiler {
 		Node::Program program;
 		while (Peek().has_value())
 		{
-			if (auto statement = ParseStatement())
+			auto statement = ParseStatement();
+			if (statement.has_value())
 				program.statement.push_back(statement.value());
 			else
 				ThrowError("Invalid statement");
