@@ -91,6 +91,11 @@ namespace Compiler
 					PushBack(tokens, TokenType::If);
 					buffer.clear();
 				}
+				else if (buffer == "else")
+				{
+					PushBack(tokens, TokenType::Else);
+					buffer.clear();
+				}
 				else
 				{
 					PushBack(tokens, TokenType::Ident, buffer);

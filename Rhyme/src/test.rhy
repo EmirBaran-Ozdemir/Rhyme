@@ -1,5 +1,19 @@
-var a = 9;
-var b = 15;
-if (b<a) {exit(3);};
-if (4<a) {exit(4);};
+var b = 19;
+{
+	var a = 5;
+}
+var c = 22;
+if (b>a) 
+{
+	var x = 10;
+}
+if(c>b) 
+{
+	exit(c);
+}
+else
+{
+	exit(1);
+}
+
 exit(5);

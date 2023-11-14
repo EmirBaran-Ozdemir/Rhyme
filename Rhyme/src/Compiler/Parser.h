@@ -67,14 +67,22 @@ namespace Node {
 		Token ident;
 		Expr* expr;
 	};
-
+	
+	struct StatementScope {
+		std::vector<Statement*> statement;
+	};
 	struct StatementIf {
 		Expr* expr;
-		Statement* statement;
+		StatementScope* scope;
+		bool hasElse;
+	};
+
+	struct StatementElse {
+		StatementScope* scope;
 	};
 
 	struct Statement {
-		std::variant<StatementExit*, StatementVar*, StatementIf*> var;
+		std::variant<StatementExit*, StatementVar*, StatementIf*, StatementElse*, StatementScope*> var;
 	};
 
 	struct Program {
@@ -89,6 +97,7 @@ namespace Compiler
 		Parser(const std::vector<Token>& tokens);
 		std::optional<Node::Expr*> ParseExpr(int minPrecedence = 0);
 		std::optional<Node::Term*> ParseTerm();
+		std::optional<Node::StatementScope*> ParseScope();
 		std::optional<Node::Statement*> ParseStatement();
 		std::optional<Node::Program> ParseProgram();
 	private:

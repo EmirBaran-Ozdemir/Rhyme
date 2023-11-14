@@ -8,15 +8,25 @@ int main(int argc, char* argv[])
 {
 	std::string contents;
 	std::fstream input_file("/home/Emir/VisualStudio/Rhyme/Rhyme/src/test.rhy", std::ios::in);
-
-	//if (argc != 2)
+	bool enableDebug = false;
+	//if (argc < 2)
 	//{
 	//	std::cerr << "ERROR::INCORRECT_USAGE" << std::endl;
-	//	std::cerr << "Correct usage: Rhyme <filename>.rhy" << std::endl;
+	//	std::cerr << "Correct usage: Rhyme <filename>.rhy (optional flags) -D(enable debug)" << std::endl;
 	//	return EXIT_FAILURE;
 	//}
-
 	//std::fstream input_file(argv[1], std::ios::in);
+	if (argc > 1)
+	{
+		for (int i = 1; i < argc; i++) 
+		{
+			if (std::strcmp(argv[i], "-D") == 0)
+			{
+				enableDebug = true;
+			}
+		}
+	}
+
 	if (!input_file.is_open())
 	{
 		std::cerr << "ERROR::FILE_NOT_FOUND" << std::endl;
@@ -44,7 +54,7 @@ int main(int argc, char* argv[])
 			return EXIT_FAILURE;
 		}
 
-		Compiler::Generator generator(program.value());
+		Compiler::Generator generator(program.value(),enableDebug);
 		auto assembly = generator.GenerateProgram();
 
 		std::fstream output_file("out.asm", std::ios::out);

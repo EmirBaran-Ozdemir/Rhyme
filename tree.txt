@@ -1,0 +1,30 @@
+Folder PATH listing for volume Data
+Volume serial number is 6A2F-97BB
+D:.
+-   .gitignore
+-   CMakeLists.txt
+-   CMakePresets.json
+-   LICENSE
+-   README.md
+-   tree.txt
+-   
+
+L¦¦¦Rhyme
+    -   CMakeLists.txt
+    -   
+    L¦¦¦src
+        -   MemoryPool.cpp
+        -   MemoryPool.h
+        -   Rhyme.cpp
+        -   rhypch.cpp
+        -   rhypch.h
+        -   test.rhy
+        -   
+        L¦¦¦Compiler
+                Generator.cpp
+                Generator.h
+                Parser.cpp
+                Parser.h
+                Tokenizer.cpp
+                Tokenizer.h
+                

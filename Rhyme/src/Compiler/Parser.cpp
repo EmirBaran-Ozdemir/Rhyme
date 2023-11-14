@@ -161,8 +161,24 @@ namespace Compiler {
 			return std::nullopt;
 	}
 
+	std::optional<Node::StatementScope*> Parser::ParseScope()
+	{
+		if (FalseCheck(TokenType::OpenCurlyParenthesis))
+			ThrowError("Missing open curly parenthesis");
+		Consume(); // Consume '{'
+		auto scopeStatement = m_Pool.Allocate<Node::StatementScope>();
+		while (auto statement = ParseStatement())
+		{
+			scopeStatement->statement.push_back(statement.value());
+		}
+		if (FalseCheck(TokenType::CloseCurlyParenthesis))
+			ThrowError("Missing close curly parenthesis");
+		Consume(); // Consume '}'
+		return scopeStatement;
+	}
+
 	std::optional<Node::Statement*> Parser::ParseStatement() {
-		Node::Statement* statement = static_cast<Node::Statement*>(m_Pool.Allocate<Node::Statement>());
+		auto statement = m_Pool.Allocate<Node::Statement>();
 
 		if (Check(TokenType::Exit)) {
 			Consume(); // Consume 'exit'
@@ -170,64 +186,32 @@ namespace Compiler {
 			if (FalseCheck(TokenType::OpenParenthesis))
 				ThrowError("Missing open parenthesis");
 
-
 			Consume(); // Consume '('
 
-			Node::StatementExit* exitStatement = static_cast<Node::StatementExit*>(m_Pool.Allocate<Node::StatementExit>());
+			auto exitStatement = m_Pool.Allocate<Node::StatementExit>();
+
 			auto expr = ParseExpr();
 
 			if (!expr.has_value())
 				ThrowError("Invalid expression", *this);
-
 
 			exitStatement->expr = expr.value();
 
 			if (FalseCheck(TokenType::CloseParenthesis))
 				ThrowError("Missing close parenthesis");
 
-
 			Consume(); // Consume ')'
+			if (FalseCheck(TokenType::Semicolon))
+				ThrowError("Missing semicolon");
+			Consume(); // Consume ';'
 
 			statement->var = exitStatement;
-		}
-		else if (Check(TokenType::If))
-		{
-			Consume(); // Consume 'if'
-
-			if (FalseCheck(TokenType::OpenParenthesis))
-				ThrowError("Missing open parenthesis");
-			Consume(); // Consume '('
-
-			Node::StatementIf* ifStatement = static_cast<Node::StatementIf*>(m_Pool.Allocate<Node::StatementIf>());
-			auto expr = ParseExpr();
-			if(!expr.has_value())
-				ThrowError("Invalid expression", *this);
-
-			ifStatement->expr = expr.value();
-
-			if (FalseCheck(TokenType::CloseParenthesis))
-				ThrowError("Missing close parenthesis");
-			Consume(); // Consume ')'
-
-			if (FalseCheck(TokenType::OpenCurlyParenthesis))
-				ThrowError("Missing open curly parenthesis");
-			Consume(); // Consume '{'
-
-			auto innerStatement = ParseStatement(); //Name this something else
-			if (!innerStatement.has_value())
-				ThrowError("Invalid statement", *this);
-
-			if (FalseCheck(TokenType::CloseCurlyParenthesis))
-				ThrowError("Missing close curly parenthesis");
-			Consume(); // Consume '}'
-
-			ifStatement->statement = innerStatement.value();
-			statement->var = ifStatement;
 		}
 		else if (Check(TokenType::Variable) && Check(TokenType::Ident, 1) && Check(TokenType::Equals, 2)) {
 			Consume(); // Consume 'var'
 
-			Node::StatementVar* varStatement = static_cast<Node::StatementVar*>(m_Pool.Allocate<Node::StatementVar>());
+			auto varStatement = m_Pool.Allocate<Node::StatementVar>();
+
 			varStatement->ident = Consume(); // Consume identifier
 			Consume(); // Consume '='
 
@@ -236,22 +220,75 @@ namespace Compiler {
 			if (!expr.has_value())
 				ThrowError("Invalid expression", *this);
 
-
+			if (FalseCheck(TokenType::Semicolon))
+				ThrowError("Missing semicolon");
+			Consume(); // Consume ';'
 			varStatement->expr = expr.value();
 			statement->var = varStatement;
 		}
-		else if (Check(TokenType::Variable) && Check(TokenType::Plus, 1) && Check(TokenType::Variable, 2))
+		else if (Check(TokenType::If))
 		{
-			Token value = Consume();
+			auto ifStatement = m_Pool.Allocate<Node::StatementIf>();
+
+			Consume(); // Consume 'if'
+
+			if (FalseCheck(TokenType::OpenParenthesis))
+				ThrowError("Missing open parenthesis");
+			Consume(); // Consume '('
+
+			auto expr = ParseExpr();
+			if (!expr.has_value())
+				ThrowError("Invalid expression", *this);
+
+			ifStatement->expr = expr.value();
+
+			if (FalseCheck(TokenType::CloseParenthesis))
+				ThrowError("Missing close parenthesis");
+			Consume(); // Consume ')'
+
+			if (auto scope = ParseScope())
+				ifStatement->scope = scope.value();
+			else
+				ThrowError("Expected scope");
+
+			if (Check(TokenType::Else))
+			{
+				ifStatement->hasElse = true;
+			}
+			
+			statement->var = ifStatement;
+		}
+
+		else if (Check(TokenType::Else))
+		{
+			Consume(); // Consume 'else'
+			//if (Check(TokenType::If))
+			//{
+			//	ParseStatement();
+			//}
+			//else
+			//{
+			auto elseStatement = m_Pool.Allocate<Node::StatementElse>();
+
+			if (auto scope = ParseScope())
+				elseStatement->scope = scope.value();
+			else
+				ThrowError("Expected scope");
+			statement->var = elseStatement;
+
+		}
+		else if (Check(TokenType::OpenCurlyParenthesis)) //! SCOPE
+		{
+			if (auto scopeStatement = ParseScope())
+			{
+				statement->var = scopeStatement.value();
+				return statement;
+			}
+			else
+				ThrowError("Invalid scope");
 		}
 		else
 			return std::nullopt;
-
-
-		if (FalseCheck(TokenType::Semicolon))
-			ThrowError("Missing semicolon");
-
-		Consume(); // Consume ';'
 
 		Node::Statement* retStatement = new Node::Statement{ .var = statement->var };
 		return retStatement;

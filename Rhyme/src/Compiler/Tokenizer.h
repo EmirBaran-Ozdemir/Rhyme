@@ -7,6 +7,8 @@ enum class TokenType {
 	Ident,
 	Variable,
 	If,
+	ElseIf,
+	Else,
 	// Characters
 	Semicolon,
 	OpenParenthesis,
