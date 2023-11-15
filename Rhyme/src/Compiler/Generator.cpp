@@ -27,7 +27,7 @@ namespace Compiler {
 				{
 					gen->ThrowError("Identifier is not declared", termIdent->ident.value.value());
 				}
-				
+
 				std::stringstream offset;
 				if (gen->m_EnableDebug)
 					offset << "QWORD [rsp + " << (gen->m_StackSize - (*it).stackLocation - 1) * 8 << "] ;" << termIdent->ident.value.value();
@@ -52,8 +52,7 @@ namespace Compiler {
 			Generator* gen;
 			void operator()(const Node::BinExprAddition* add)
 			{
-				if (gen->m_EnableDebug)
-					gen->m_Output << ";Addition\n";
+				gen->DebugMessage("Addition");
 				gen->GenerateExpression(add->rhs);
 				gen->GenerateExpression(add->lhs);
 				gen->Pop("rax");
@@ -63,8 +62,7 @@ namespace Compiler {
 			}
 			void operator()(const Node::BinExprMultiplication* multi)
 			{
-				if (gen->m_EnableDebug)
-					gen->m_Output << ";Multiplication\n";
+				gen->DebugMessage("Multiplication");
 				gen->GenerateExpression(multi->rhs);
 				gen->GenerateExpression(multi->lhs);
 				gen->Pop("rax");
@@ -74,8 +72,7 @@ namespace Compiler {
 			}
 			void operator()(const Node::BinExprSubtraction* subtr)
 			{
-				if (gen->m_EnableDebug)
-					gen->m_Output << ";Substraction\n";
+				gen->DebugMessage("Subtraction");
 				gen->GenerateExpression(subtr->rhs);
 				gen->GenerateExpression(subtr->lhs);
 				gen->Pop("rax");
@@ -85,8 +82,7 @@ namespace Compiler {
 			}
 			void operator()(const Node::BinExprDivision* div)
 			{
-				if (gen->m_EnableDebug)
-					gen->m_Output << ";Division\n";
+				gen->DebugMessage("Division");
 				gen->GenerateExpression(div->rhs);
 				gen->GenerateExpression(div->lhs);
 				gen->Pop("rax");
@@ -96,8 +92,7 @@ namespace Compiler {
 			}
 			void operator()(const Node::BinExprLessThan* less)
 			{
-				if (gen->m_EnableDebug)
-					gen->m_Output << ";LessThan\n";
+				gen->DebugMessage("LessThan");
 				gen->GenerateExpression(less->rhs);
 				gen->GenerateExpression(less->lhs);
 				gen->Pop("rax");
@@ -116,8 +111,7 @@ namespace Compiler {
 			}
 			void operator()(const Node::BinExprGreaterThan* greater)
 			{
-				if (gen->m_EnableDebug)
-					gen->m_Output << ";GreaterThan\n";
+				gen->DebugMessage("GreaterThan");
 				gen->GenerateExpression(greater->rhs);
 				gen->GenerateExpression(greater->lhs);
 				gen->Pop("rax");
@@ -164,8 +158,7 @@ namespace Compiler {
 			Generator* gen;
 			void operator()(const Node::StatementExit* statementExit) const
 			{
-				if (gen->m_EnableDebug)
-					gen->m_Output << ";Exit\n";
+				gen->DebugMessage("Exit");
 				gen->GenerateExpression(statementExit->expr);
 				gen->Move("rax", "60");
 				gen->Pop("rdi");
@@ -173,8 +166,7 @@ namespace Compiler {
 			}
 			void operator()(const Node::StatementVar* statementVar) const
 			{
-				if (gen->m_EnableDebug)
-					gen->m_Output << ";Var\n";
+				gen->DebugMessage("Var");
 				auto it = std::find_if(gen->m_VariableList.cbegin(), gen->m_VariableList.cend(), [&](const Variable& var) {
 					return var.name == statementVar->ident.value.value();
 					});
@@ -182,13 +174,12 @@ namespace Compiler {
 				{
 					gen->ThrowError("Identifier already declared", statementVar->ident.value.value());
 				}
-				gen->m_VariableList.push_back({.name = statementVar->ident.value.value(), .stackLocation = gen->m_StackSize });
+				gen->m_VariableList.push_back({ .name = statementVar->ident.value.value(), .stackLocation = gen->m_StackSize });
 				gen->GenerateExpression(statementVar->expr);
 			}
 			void operator()(const Node::StatementIf* statementIf) const
 			{
-				if (gen->m_EnableDebug)
-					gen->m_Output << ";If\n";
+				gen->DebugMessage("If");
 				gen->m_IfCount++;
 				if (!statementIf->hasElse)
 					gen->m_EndIf = gen->m_IfCount;
@@ -199,15 +190,27 @@ namespace Compiler {
 				gen->GenerateScope(statementIf->scope);
 				if (statementIf->hasElse)
 					gen->m_Output << "\tjmp L" << gen->m_EndIf << "\n";
+				gen->m_Output << "L" << gen->m_IfCount << ":\n";
+				gen->m_IfCount++;
+				gen->m_StatementIf = false;
+			}
+			void operator()(const Node::StatementElseIf* StatementElseIf) const
+			{
+				gen->DebugMessage("If");
+				gen->m_IfCount++;
+				gen->m_StatementIf = true;
+				gen->GenerateExpression(StatementElseIf->expr);
+				gen->GenerateScope(StatementElseIf->scope);
+				if (StatementElseIf->hasElse)
+					gen->m_Output << "\tjmp L" << gen->m_EndIf << "\n";
+				gen->m_Output << "L" << gen->m_IfCount << ":\n";
 				gen->m_StatementIf = false;
 			}
 			void operator()(const Node::StatementElse* statementElse) const
 			{
-				if (gen->m_EnableDebug)
-					gen->m_Output << ";Else\n";
-				gen->m_Output << "L" << gen->m_IfCount << ":\n";
+				gen->DebugMessage("Else");
 				gen->GenerateScope(statementElse->scope);
-				gen->m_Output << "L" << gen->m_EndIf << ":\n";
+				gen->m_Output << "\nL" << gen->m_EndIf << ":\n";
 			}
 			void operator()(const Node::StatementScope* statementScope) const
 			{
@@ -281,5 +284,10 @@ namespace Compiler {
 	void Generator::ThrowError(const std::string& message, const std::string& ident)
 	{
 		throw std::invalid_argument("ERROR::PARSER::" + message + " : " + ident);
+	}
+	void Generator::DebugMessage(const std::string& message)
+	{
+		if (m_EnableDebug)
+			m_Output << ";" << message << "\n";
 	}
 }

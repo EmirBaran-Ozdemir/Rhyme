@@ -71,7 +71,14 @@ namespace Node {
 	struct StatementScope {
 		std::vector<Statement*> statement;
 	};
+	
 	struct StatementIf {
+		Expr* expr;
+		StatementScope* scope;
+		bool hasElse;
+	};
+	
+	struct StatementElseIf {
 		Expr* expr;
 		StatementScope* scope;
 		bool hasElse;
@@ -82,7 +89,7 @@ namespace Node {
 	};
 
 	struct Statement {
-		std::variant<StatementExit*, StatementVar*, StatementIf*, StatementElse*, StatementScope*> var;
+		std::variant<StatementExit*, StatementVar*, StatementIf*,StatementElseIf*, StatementElse*, StatementScope*> var;
 	};
 
 	struct Program {
@@ -99,6 +106,7 @@ namespace Compiler
 		std::optional<Node::Term*> ParseTerm();
 		std::optional<Node::StatementScope*> ParseScope();
 		std::optional<Node::Statement*> ParseStatement();
+		std::optional<Node::StatementIf*> ParseStatementIf();
 		std::optional<Node::Program> ParseProgram();
 	private:
 		std::optional<Token> Peek(int offset = 0) const;
@@ -111,6 +119,7 @@ namespace Compiler
 		void ThrowError(const std::string& message, const std::string& expression);
 	private:
 		int m_Index = 0;
+		std::optional<Node::Statement*> m_PrevStatement;
 		Resources::MemoryPool m_Pool;
 		const std::vector<Token> m_Tokens;
 	};

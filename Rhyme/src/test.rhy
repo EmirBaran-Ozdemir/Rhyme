@@ -1,11 +1,28 @@
 var b = 19;
 
 // var a = 33; 
-var a = 11;
+var a = 21;
 
-if (b>a) 
+if(b > a)
 {
-	var x = 10;
+	var x = 21;
+}
+
+if(a < b)
+{
+	var x = 31;
+}
+if (a>10) 
+{
+	var x = 41;
+}
+else if(b>10)
+{
+	var x = 51;
+}
+else if(a>8)
+{
+	var x = 61;
 }
 else
 {

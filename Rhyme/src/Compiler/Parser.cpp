@@ -6,7 +6,7 @@ namespace Compiler {
 	Parser::Parser(const std::vector<Token>& tokens)
 		: m_Tokens(tokens), m_Pool(1024 * 1024 * 4)
 	{
-
+		m_PrevStatement = m_Pool.Allocate<Node::Statement>();
 	}
 
 	std::optional<Token> Parser::Peek(int offset) const
@@ -255,26 +255,57 @@ namespace Compiler {
 			{
 				ifStatement->hasElse = true;
 			}
-
 			statement->var = ifStatement;
 		}
 
 		else if (Check(TokenType::Else))
 		{
-			Consume(); // Consume 'else'
-			//if (Check(TokenType::If))
-			//{
-			//	ParseStatement();
-			//}
-			//else
-			//{
-			auto elseStatement = m_Pool.Allocate<Node::StatementElse>();
+			//if (!std::holds_alternative<Node::StatementIf*>(m_PrevStatement.value()->var) || !std::holds_alternative<Node::StatementElseIf*>(m_PrevStatement.value()->var))
+			//	ThrowError("If statement required before else statement");
 
-			if (auto scope = ParseScope())
-				elseStatement->scope = scope.value();
+			Consume(); // Consume 'else'
+			if (Check(TokenType::If))
+			{
+				auto ifStatement = m_Pool.Allocate<Node::StatementElseIf>();
+
+				Consume(); // Consume 'if'
+
+				if (FalseCheck(TokenType::OpenParenthesis))
+					ThrowError("Missing open parenthesis");
+				Consume(); // Consume '('
+
+				auto expr = ParseExpr();
+				if (!expr.has_value())
+					ThrowError("Invalid expression", *this);
+
+				ifStatement->expr = expr.value();
+
+				if (FalseCheck(TokenType::CloseParenthesis))
+					ThrowError("Missing close parenthesis");
+				Consume(); // Consume ')'
+
+				if (auto scope = ParseScope())
+					ifStatement->scope = scope.value();
+				else
+					ThrowError("Expected scope");
+
+				if (Check(TokenType::Else))
+				{
+					ifStatement->hasElse = true;
+				}
+
+				statement->var = ifStatement;
+			}
 			else
-				ThrowError("Expected scope");
-			statement->var = elseStatement;
+			{
+				auto elseStatement = m_Pool.Allocate<Node::StatementElse>();
+
+				if (auto scope = ParseScope())
+					elseStatement->scope = scope.value();
+				else
+					ThrowError("Expected scope");
+				statement->var = elseStatement;
+			}
 
 		}
 		else if (Check(TokenType::OpenCurlyParenthesis)) //! Scope
@@ -291,6 +322,7 @@ namespace Compiler {
 			return std::nullopt;
 
 		Node::Statement* retStatement = new Node::Statement{ .var = statement->var };
+		m_PrevStatement = retStatement;
 		return retStatement;
 	}
 
