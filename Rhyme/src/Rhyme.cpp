@@ -8,7 +8,8 @@ int main(int argc, char* argv[])
 {
 	std::string contents;
 	std::fstream input_file("/home/Emir/VisualStudio/Rhyme/Rhyme/src/test.rhy", std::ios::in);
-	bool enableDebug = false;
+	bool paramDebug = false;
+	bool paramClean = false;
 	//if (argc < 2)
 	//{
 	//	std::cerr << "ERROR::INCORRECT_USAGE" << std::endl;
@@ -22,7 +23,11 @@ int main(int argc, char* argv[])
 		{
 			if (std::strcmp(argv[i], "-D") == 0)
 			{
-				enableDebug = true;
+				paramDebug = true;
+			}
+			if (std::strcmp(argv[i], "-C") == 0)
+			{
+				paramClean = true;
 			}
 		}
 	}
@@ -54,7 +59,7 @@ int main(int argc, char* argv[])
 			return EXIT_FAILURE;
 		}
 
-		Compiler::Generator generator(program.value(),enableDebug);
+		Compiler::Generator generator(program.value(), paramDebug);
 		auto assembly = generator.GenerateProgram();
 
 		std::fstream output_file("out.asm", std::ios::out);
@@ -72,7 +77,12 @@ int main(int argc, char* argv[])
 		std::system("nasm -f elf64 out.asm");
 		std::system("ld out.o -o out");
 		int exitCode = std::system("./out");
-
+		if (paramClean)
+		{
+			std::system("rm out");
+			std::system("rm out.o");
+			std::system("rm out.asm");
+		}
 		std::cout << "Exit Status: " << WEXITSTATUS(exitCode) << std::endl;
 
 	}

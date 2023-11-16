@@ -1,26 +1,26 @@
 var b = 19;
 
 // var a = 33; 
-var a = 21;
+var a = 19;
 
-if(b > a)
+if(b <= a)
 {
-	var x = 21;
+	exit(2);
 }
 
 if(a < b)
 {
 	var x = 31;
 }
-if (a>10) 
+if (a<10) 
 {
 	var x = 41;
 }
-else if(b>10)
+else if(b<10)
 {
 	var x = 51;
 }
-else if(a>8)
+else if(a<8)
 {
 	var x = 61;
 }

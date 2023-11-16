@@ -15,14 +15,20 @@ enum class TokenType {
 	CloseParenthesis,
 	OpenCurlyParenthesis,
 	CloseCurlyParenthesis,
-	Equals,
+	Assign,
 	Plus,
 	Star,
 	Minus,
 	Slash,
 	Backslash,
-	LessThan,
-	GreaterThan,
+
+	// Comparison
+	Equal,
+	Less,
+	LessEqual,
+	Greater,
+	GreaterEqual,
+
 };
 
 struct Token {

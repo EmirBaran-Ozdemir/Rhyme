@@ -39,8 +39,11 @@ namespace Compiler
 			case TokenType::Plus:			return true;
 			case TokenType::Minus:			return true;
 			case TokenType::Slash:			return true;
-			case TokenType::GreaterThan:	return true;
-			case TokenType::LessThan:		return true;
+			case TokenType::Less:			return true;
+			case TokenType::LessEqual:		return true;
+			case TokenType::Greater:		return true;
+			case TokenType::GreaterEqual:	return true;
+			case TokenType::Equal:			return true;
 
 			default: return false;
 		}
@@ -50,8 +53,11 @@ namespace Compiler
 	{
 		switch (type)
 		{
-			case TokenType::GreaterThan:	return 0;
-			case TokenType::LessThan:		return 0;
+			case TokenType::Less:			return 0;
+			case TokenType::LessEqual:		return 0;
+			case TokenType::Greater:		return 0;
+			case TokenType::GreaterEqual:	return 0;
+			case TokenType::Equal:			return 0;
 			case TokenType::Plus:			return 1;
 			case TokenType::Minus:			return 1;
 			case TokenType::Star:			return 2;
@@ -152,12 +158,24 @@ namespace Compiler
 			else if (Peek().value() == '<')
 			{
 				Consume();
-				PushBack(tokens, TokenType::LessThan);
+				if (Peek().value() == '=')
+				{
+					Consume();
+					PushBack(tokens, TokenType::LessEqual);
+				}
+				else
+					PushBack(tokens, TokenType::Less);
 			}
 			else if (Peek().value() == '>')
 			{
 				Consume();
-				PushBack(tokens, TokenType::GreaterThan);
+				if (Peek().value() == '=')
+				{
+					Consume();
+					PushBack(tokens, TokenType::GreaterEqual);
+				}
+				else
+					PushBack(tokens, TokenType::Greater);
 			}
 			else if (std::isdigit(Peek().value()))
 			{
@@ -172,7 +190,13 @@ namespace Compiler
 			else if (Peek().value() == '=')
 			{
 				Consume();
-				PushBack(tokens, TokenType::Equals);
+				if (Peek().value() == '=')
+				{
+					Consume();
+					PushBack(tokens, TokenType::Equal);
+				}
+				else
+					PushBack(tokens, TokenType::Assign);
 			}
 			else if (Peek().value() == ';')
 			{

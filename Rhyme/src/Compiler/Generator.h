@@ -19,6 +19,35 @@ namespace Compiler {
 		void GenerateScope(const Node::StatementScope* scope);
 		std::string GenerateProgram();
 
+		template <typename Operator>
+		void GenerateArithmeticBinaryExpression(const Operator* op, const char* operation)
+		{
+			GenerateExpression(op->rhs);
+			GenerateExpression(op->lhs);
+			Pop("rax");
+			Pop("rbx");
+			m_Output << "\t" << operation << " rax, rbx\n";
+			Push("rax");
+		}
+		template <typename Operator>
+		void GenerateComparisonBinaryExpression(const Operator* op, const char* operation)
+		{
+			GenerateExpression(op->rhs);
+			GenerateExpression(op->lhs);
+			Pop("rax");
+			Pop("rbx");
+			m_Output << "\tcmp rax,rbx\n";
+			if (m_StatementIf)
+			{
+				Push("rax");
+				m_Output << "\t" << operation << " L" << m_IfCount << "\n";
+			}
+			else
+			{
+				m_Output << "\tsetl al\n";
+				Push("rax");
+			}
+		}
 	private:
 		void Push(const std::string& reg);
 		void Pop(const std::string& reg);

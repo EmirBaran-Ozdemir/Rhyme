@@ -61,85 +61,71 @@ namespace Compiler {
 
 			auto binExpr = m_Pool.Allocate<Node::BinExpr>();
 			auto exprLhsTemp = m_Pool.Allocate<Node::Expr>();
-			switch (op.type)
-			{
+
+			auto createBinaryExpr = [&](auto binExprType) {
+				exprLhsTemp->var = exprLhs->var;
+				binExprType->lhs = exprLhsTemp;
+				binExprType->rhs = exprRhs.value();
+				binExpr->binExprType = binExprType;
+			};
+
+			switch (op.type) {
 				case TokenType::Plus:
-				{
-					auto binExprAdd = m_Pool.Allocate<Node::BinExprAddition>();
-					exprLhsTemp->var = exprLhs->var;
-					binExprAdd->lhs = exprLhsTemp;
-					binExprAdd->rhs = exprRhs.value();
-					binExpr->binExprType = binExprAdd;
+					createBinaryExpr(m_Pool.Allocate<Node::BinExprAddition>());
 					break;
-				}
 				case TokenType::Star:
-				{
-					auto binExprMulti = m_Pool.Allocate<Node::BinExprMultiplication>();
-					exprLhsTemp->var = exprLhs->var;
-					binExprMulti->lhs = exprLhsTemp;
-					binExprMulti->rhs = exprRhs.value();
-					binExpr->binExprType = binExprMulti;
+					createBinaryExpr(m_Pool.Allocate<Node::BinExprMultiplication>());
 					break;
-				}
 				case TokenType::Minus:
-				{
-					auto binExprSubtraction = m_Pool.Allocate<Node::BinExprSubtraction>();
-					exprLhsTemp->var = exprLhs->var;
-					binExprSubtraction->lhs = exprLhsTemp;
-					binExprSubtraction->rhs = exprRhs.value();
-					binExpr->binExprType = binExprSubtraction;
+					createBinaryExpr(m_Pool.Allocate<Node::BinExprSubtraction>());
 					break;
-				}
 				case TokenType::Slash:
-				{
-					auto binExprDiv = m_Pool.Allocate<Node::BinExprDivision>();
-					exprLhsTemp->var = exprLhs->var;
-					binExprDiv->lhs = exprLhsTemp;
-					binExprDiv->rhs = exprRhs.value();
-					binExpr->binExprType = binExprDiv;
+					createBinaryExpr(m_Pool.Allocate<Node::BinExprDivision>());
 					break;
-				}
-				case TokenType::LessThan:
-				{
-					auto binExprLess = m_Pool.Allocate<Node::BinExprLessThan>();
-					exprLhsTemp->var = exprLhs->var;
-					binExprLess->lhs = exprLhsTemp;
-					binExprLess->rhs = exprRhs.value();
-					binExpr->binExprType = binExprLess;
+				case TokenType::Less:
+					createBinaryExpr(m_Pool.Allocate<Node::BinExprLessThan>());
 					break;
-				}
-				case TokenType::GreaterThan:
-				{
-					auto binExprGreater = m_Pool.Allocate<Node::BinExprGreaterThan>();
-					exprLhsTemp->var = exprLhs->var;
-					binExprGreater->lhs = exprLhsTemp;
-					binExprGreater->rhs = exprRhs.value();
-					binExpr->binExprType = binExprGreater;
+				case TokenType::LessEqual:
+					createBinaryExpr(m_Pool.Allocate<Node::BinExprLessThanOrEqual>());
 					break;
-				}
+				case TokenType::Greater:
+					createBinaryExpr(m_Pool.Allocate<Node::BinExprGreaterThan>());
+					break;
+				case TokenType::GreaterEqual:
+					createBinaryExpr(m_Pool.Allocate<Node::BinExprGreaterThanOrEqual>());
+					break;
+				case TokenType::Equal:
+					createBinaryExpr(m_Pool.Allocate<Node::BinExprEqual>());
+					break;
 			}
+
 			exprLhs->var = binExpr;
+
 		}
 		return exprLhs;
 	}
 
 	std::optional<Node::Term*> Parser::ParseTerm()
 	{
+		
+		auto createTerm = [&](auto termType)
+		{
+			auto term = m_Pool.Allocate<Node::Term>();
+			term->var = termType;
+			return term;
+		};
 		if (Check(TokenType::IntegerLiteral))
 		{
 			auto termIntLit = m_Pool.Allocate<Node::TermIntLit>();
 			termIntLit->intLit = Consume();
-			auto term = m_Pool.Allocate<Node::Term>();
-			term->var = termIntLit;
-			return term;
+			return createTerm(termIntLit);
+
 		}
 		else if (Check(TokenType::Ident))
 		{
 			auto termIdent = m_Pool.Allocate<Node::TermIdent>();
 			termIdent->ident = Consume();
-			auto term = m_Pool.Allocate<Node::Term>();
-			term->var = termIdent;
-			return term;
+			return createTerm(termIdent);
 		}
 		else if (Check(TokenType::OpenParenthesis))
 		{
@@ -153,9 +139,7 @@ namespace Compiler {
 				ThrowError("Missing ')'");
 			auto termParenthesis = m_Pool.Allocate<Node::TermParenthesis>();
 			termParenthesis->expr = expr.value();
-			auto term = m_Pool.Allocate<Node::Term>();
-			term->var = termParenthesis;
-			return term;
+			return createTerm(termParenthesis);
 		}
 		else
 			return std::nullopt;
@@ -207,7 +191,7 @@ namespace Compiler {
 
 			statement->var = exitStatement;
 		}
-		else if (Check(TokenType::Variable) && Check(TokenType::Ident, 1) && Check(TokenType::Equals, 2)) {
+		else if (Check(TokenType::Variable) && Check(TokenType::Ident, 1) && Check(TokenType::Assign, 2)) {
 			Consume(); // Consume 'var'
 
 			auto varStatement = m_Pool.Allocate<Node::StatementVar>();
@@ -260,8 +244,9 @@ namespace Compiler {
 
 		else if (Check(TokenType::Else))
 		{
-			//if (!std::holds_alternative<Node::StatementIf*>(m_PrevStatement.value()->var) || !std::holds_alternative<Node::StatementElseIf*>(m_PrevStatement.value()->var))
-			//	ThrowError("If statement required before else statement");
+			auto index = m_PrevStatement.value()->var.index();
+			if (!std::holds_alternative<Node::StatementIf*>(m_PrevStatement.value()->var) && !std::holds_alternative<Node::StatementElseIf*>(m_PrevStatement.value()->var))
+				ThrowError("If statement required before else statement");
 
 			Consume(); // Consume 'else'
 			if (Check(TokenType::If))

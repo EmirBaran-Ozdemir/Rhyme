@@ -50,89 +50,67 @@ namespace Compiler {
 		struct BinExprVisitor
 		{
 			Generator* gen;
-			void operator()(const Node::BinExprAddition* add)
+			const Node::BinExpr* expr;
+
+			void operator()(const Node::BinExprAddition* add) const
 			{
 				gen->DebugMessage("Addition");
-				gen->GenerateExpression(add->rhs);
-				gen->GenerateExpression(add->lhs);
-				gen->Pop("rax");
-				gen->Pop("rbx");
-				gen->m_Output << "\tadd rax, rbx\n";
-				gen->Push("rax");
+				gen->GenerateArithmeticBinaryExpression(add, "add");
 			}
-			void operator()(const Node::BinExprMultiplication* multi)
+
+			void operator()(const Node::BinExprMultiplication* multi) const
 			{
 				gen->DebugMessage("Multiplication");
-				gen->GenerateExpression(multi->rhs);
-				gen->GenerateExpression(multi->lhs);
-				gen->Pop("rax");
-				gen->Pop("rbx");
-				gen->m_Output << "\tmul rbx\n";
-				gen->Push("rax");
+				gen->GenerateArithmeticBinaryExpression(multi, "mul");
 			}
-			void operator()(const Node::BinExprSubtraction* subtr)
+
+			void operator()(const Node::BinExprSubtraction* subtr) const
 			{
-				gen->DebugMessage("Subtraction");
-				gen->GenerateExpression(subtr->rhs);
-				gen->GenerateExpression(subtr->lhs);
-				gen->Pop("rax");
-				gen->Pop("rbx");
-				gen->m_Output << "\tsub rax, rbx\n";
-				gen->Push("rax");
+				gen->DebugMessage("Subtraction");	
+				gen->GenerateArithmeticBinaryExpression(subtr, "sub");
 			}
-			void operator()(const Node::BinExprDivision* div)
+
+			void operator()(const Node::BinExprDivision* div) const
 			{
 				gen->DebugMessage("Division");
-				gen->GenerateExpression(div->rhs);
-				gen->GenerateExpression(div->lhs);
-				gen->Pop("rax");
-				gen->Pop("rbx");
-				gen->m_Output << "\tidiv rbx\n";
-				gen->Push("rax");
+				gen->GenerateArithmeticBinaryExpression(div, "idiv");
 			}
-			void operator()(const Node::BinExprLessThan* less)
+
+			void operator()(const Node::BinExprLessThan* less) const
 			{
-				gen->DebugMessage("LessThan");
-				gen->GenerateExpression(less->rhs);
-				gen->GenerateExpression(less->lhs);
-				gen->Pop("rax");
-				gen->Pop("rbx");
-				gen->m_Output << "\tcmp rax, rbx\n";
-				if (gen->m_StatementIf)
-				{
-					gen->Push("rax");
-					gen->m_Output << "\tjnl L" << gen->m_IfCount << "\n";
-				}
-				else
-				{
-					gen->m_Output << "\tsetl al\n";
-					gen->Push("rax");
-				}
+				gen->DebugMessage("Less");
+				gen->GenerateComparisonBinaryExpression(less, "jnl");
 			}
-			void operator()(const Node::BinExprGreaterThan* greater)
+
+			void operator()(const Node::BinExprLessThanOrEqual* lessEqual) const
 			{
-				gen->DebugMessage("GreaterThan");
-				gen->GenerateExpression(greater->rhs);
-				gen->GenerateExpression(greater->lhs);
-				gen->Pop("rax");
-				gen->Pop("rbx");
-				gen->m_Output << "\tcmp rax,rbx\n";
-				if (gen->m_StatementIf)
-				{
-					gen->Push("rax");
-					gen->m_Output << "\tjng L" << gen->m_IfCount << "\n";
-				}
-				else
-				{
-					gen->m_Output << "\tsetl al\n";
-					gen->Push("rax");
-				}
+				gen->DebugMessage("LessThanOrEqual");
+				gen->GenerateComparisonBinaryExpression(lessEqual, "jg");
+			}
+
+			void operator()(const Node::BinExprGreaterThan* greater) const
+			{
+				gen->DebugMessage("Greater");
+				gen->GenerateComparisonBinaryExpression(greater, "jng");
+			}
+
+			void operator()(const Node::BinExprGreaterThanOrEqual* greaterEqual) const
+			{
+				gen->DebugMessage("GreaterThanOrEqual");
+				gen->GenerateComparisonBinaryExpression(greaterEqual, "jl");
+			}
+
+			void operator()(const Node::BinExprEqual* equal) const
+			{
+				gen->DebugMessage("Equal");
+				gen->GenerateComparisonBinaryExpression(equal, "jne");
 			}
 		};
 
-		BinExprVisitor visitor({ .gen = this });
+		BinExprVisitor visitor{ this, expr };
 		std::visit(visitor, expr->binExprType);
 	}
+
 	void Generator::GenerateExpression(const Node::Expr* expr)
 	{
 		struct  ExpressionVisitor
@@ -150,7 +128,6 @@ namespace Compiler {
 		ExpressionVisitor visitor({ .gen = this });
 		std::visit(visitor, expr->var);
 	}
-
 
 	void Generator::GenerateStatement(const Node::Statement* statement)
 	{
@@ -181,15 +158,14 @@ namespace Compiler {
 			{
 				gen->DebugMessage("If");
 				gen->m_IfCount++;
-				if (!statementIf->hasElse)
-					gen->m_EndIf = gen->m_IfCount;
-				else
-					gen->m_EndIf = gen->m_IfCount + 1;
 				gen->m_StatementIf = true;
 				gen->GenerateExpression(statementIf->expr);
 				gen->GenerateScope(statementIf->scope);
 				if (statementIf->hasElse)
+				{
+					gen->m_EndIf = gen->m_IfCount + 1;
 					gen->m_Output << "\tjmp L" << gen->m_EndIf << "\n";
+				}
 				gen->m_Output << "L" << gen->m_IfCount << ":\n";
 				gen->m_IfCount++;
 				gen->m_StatementIf = false;
