@@ -32,9 +32,9 @@ namespace Compiler {
 		return !Peek().has_value() || Peek().value().type != type;
 	}
 
-	std::optional<Node::Expr*> Parser::ParseExpr(int minPrecedence)
+	std::optional<Node::Expr*> Parser::ParseExpr(int minPrecedence, bool unary)
 	{
-		std::optional<Node::Term*> termLhs = ParseTerm();
+		std::optional<Node::Term*> termLhs = ParseTerm(unary);
 		if (!termLhs.has_value())
 			return std::nullopt;
 
@@ -68,7 +68,14 @@ namespace Compiler {
 				binExprType->rhs = exprRhs.value();
 				binExpr->binExprType = binExprType;
 			};
-
+			if (unary)
+			{
+				auto invertedToken = Tokenizer::InvertToken(op.type);
+				if(invertedToken.has_value())
+					op.type = invertedToken.value();
+				else
+					ThrowError("Invalid unary operator");
+			}
 			switch (op.type) {
 				case TokenType::Plus:
 					createBinaryExpr(m_Pool.Allocate<Node::BinExprAddition>());
@@ -97,17 +104,18 @@ namespace Compiler {
 				case TokenType::Equal:
 					createBinaryExpr(m_Pool.Allocate<Node::BinExprEqual>());
 					break;
+				case TokenType::NotEqual:
+					createBinaryExpr(m_Pool.Allocate<Node::BinExprNotEqual>());
+					break;
 			}
-
 			exprLhs->var = binExpr;
-
 		}
+
 		return exprLhs;
 	}
 
-	std::optional<Node::Term*> Parser::ParseTerm()
+	std::optional<Node::Term*> Parser::ParseTerm(bool unary)
 	{
-		
 		auto createTerm = [&](auto termType)
 		{
 			auto term = m_Pool.Allocate<Node::Term>();
@@ -119,7 +127,6 @@ namespace Compiler {
 			auto termIntLit = m_Pool.Allocate<Node::TermIntLit>();
 			termIntLit->intLit = Consume();
 			return createTerm(termIntLit);
-
 		}
 		else if (Check(TokenType::Ident))
 		{
@@ -129,17 +136,34 @@ namespace Compiler {
 		}
 		else if (Check(TokenType::OpenParenthesis))
 		{
-			Consume();
-			auto expr = ParseExpr();
+			Consume(); // Consume '('
+			auto expr = ParseExpr(0,unary);
 			if (!expr.has_value())
 				ThrowError("Expected expression");
 			if (Check(TokenType::CloseParenthesis))
-				Consume();
+				Consume(); // Consume ')'
 			else
 				ThrowError("Missing ')'");
 			auto termParenthesis = m_Pool.Allocate<Node::TermParenthesis>();
 			termParenthesis->expr = expr.value();
 			return createTerm(termParenthesis);
+		}
+		else if (Check(TokenType::Exclamation))
+		{
+			Consume(); // Consume '!'
+			if (Check(TokenType::OpenParenthesis))
+			{
+				unary = unary ? false : true;
+				auto expr = ParseExpr(0, unary);
+				if (!expr.has_value())
+					ThrowError("Expected expression");
+
+				auto termUnary = m_Pool.Allocate<Node::TermUnary>();
+				termUnary->expr = expr.value();
+				return createTerm(termUnary);
+			}
+			else
+				ThrowError("Missing ')'");
 		}
 		else
 			return std::nullopt;
@@ -278,20 +302,17 @@ namespace Compiler {
 				{
 					ifStatement->hasElse = true;
 				}
-
 				statement->var = ifStatement;
 			}
 			else
 			{
 				auto elseStatement = m_Pool.Allocate<Node::StatementElse>();
-
 				if (auto scope = ParseScope())
 					elseStatement->scope = scope.value();
 				else
 					ThrowError("Expected scope");
 				statement->var = elseStatement;
 			}
-
 		}
 		else if (Check(TokenType::OpenCurlyParenthesis)) //! Scope
 		{

@@ -22,13 +22,13 @@ enum class TokenType {
 	Slash,
 	Backslash,
 
-	// Comparison
 	Equal,
+	NotEqual,
+	Exclamation,
 	Less,
 	LessEqual,
 	Greater,
-	GreaterEqual,
-
+	GreaterEqual
 };
 
 struct Token {
@@ -48,6 +48,7 @@ namespace Compiler
 		std::vector<Token> Tokenize(std::string source);
 		static bool IsBinOperator(TokenType type);
 		static std::optional<int> GetBinaryPrecedence(TokenType type);
+		static std::optional<TokenType> InvertToken(TokenType type);
 	private:
 		std::optional<char> Peek(int ahead = 0) const;
 		char Consume();

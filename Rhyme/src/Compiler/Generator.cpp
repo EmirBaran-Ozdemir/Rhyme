@@ -39,6 +39,10 @@ namespace Compiler {
 			{
 				gen->GenerateExpression(termParenthesis->expr);
 			}
+			void operator()(const Node::TermUnary* termUnary) const
+			{
+				gen->GenerateExpression(termUnary->expr);
+			}
 
 		};
 		TermVisitor visitor({ .gen = this });
@@ -61,12 +65,12 @@ namespace Compiler {
 			void operator()(const Node::BinExprMultiplication* multi) const
 			{
 				gen->DebugMessage("Multiplication");
-				gen->GenerateArithmeticBinaryExpression(multi, "mul");
+				gen->GenerateArithmeticBinaryExpression(multi, "imul");
 			}
 
 			void operator()(const Node::BinExprSubtraction* subtr) const
 			{
-				gen->DebugMessage("Subtraction");	
+				gen->DebugMessage("Subtraction");
 				gen->GenerateArithmeticBinaryExpression(subtr, "sub");
 			}
 
@@ -104,6 +108,12 @@ namespace Compiler {
 			{
 				gen->DebugMessage("Equal");
 				gen->GenerateComparisonBinaryExpression(equal, "jne");
+			}
+
+			void operator()(const Node::BinExprNotEqual* notEqual) const
+			{
+				gen->DebugMessage("NotEqual");
+				gen->GenerateComparisonBinaryExpression(notEqual, "je");
 			}
 		};
 

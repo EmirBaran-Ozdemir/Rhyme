@@ -35,15 +35,17 @@ namespace Compiler
 	{
 		switch (type)
 		{
-			case TokenType::Star:			return true;
-			case TokenType::Plus:			return true;
-			case TokenType::Minus:			return true;
-			case TokenType::Slash:			return true;
 			case TokenType::Less:			return true;
 			case TokenType::LessEqual:		return true;
 			case TokenType::Greater:		return true;
 			case TokenType::GreaterEqual:	return true;
 			case TokenType::Equal:			return true;
+			case TokenType::NotEqual:		return true;
+			case TokenType::Exclamation:	return true;
+			case TokenType::Plus:			return true;
+			case TokenType::Minus:			return true;
+			case TokenType::Star:			return true;
+			case TokenType::Slash:			return true;
 
 			default: return false;
 		}
@@ -58,14 +60,31 @@ namespace Compiler
 			case TokenType::Greater:		return 0;
 			case TokenType::GreaterEqual:	return 0;
 			case TokenType::Equal:			return 0;
+			case TokenType::NotEqual:		return 0;
 			case TokenType::Plus:			return 1;
 			case TokenType::Minus:			return 1;
 			case TokenType::Star:			return 2;
 			case TokenType::Slash:			return 2;
-
+			case TokenType::Exclamation:	return 3;
 			default: return std::nullopt;
 		}
 	}
+
+	std::optional<TokenType> Tokenizer::InvertToken(TokenType type)
+	{
+		switch (type)
+		{
+			case TokenType::Less:			return TokenType::GreaterEqual;
+			case TokenType::LessEqual:		return TokenType::Greater;
+			case TokenType::Greater:		return TokenType::LessEqual;
+			case TokenType::GreaterEqual:	return TokenType::Less;
+			case TokenType::Equal:			return TokenType::NotEqual;
+			case TokenType::NotEqual:		return TokenType::Equal;
+		}
+		return std::nullopt;
+	}
+
+
 
 	std::vector<Token> Tokenizer::Tokenize(std::string source)
 	{
@@ -177,15 +196,16 @@ namespace Compiler
 				else
 					PushBack(tokens, TokenType::Greater);
 			}
-			else if (std::isdigit(Peek().value()))
+			else if (Peek().value() == '!')
 			{
-				buffer.push_back(Consume());
-				while (Peek().has_value() && std::isdigit(Peek().value()))
+				Consume();
+				if (Peek().value() == '=')
 				{
-					buffer.push_back(Consume());
+					Consume();
+					PushBack(tokens, TokenType::NotEqual);
 				}
-				PushBack(tokens, TokenType::IntegerLiteral, buffer);
-				buffer.clear();
+				else
+					PushBack(tokens, TokenType::Exclamation);
 			}
 			else if (Peek().value() == '=')
 			{
@@ -202,6 +222,16 @@ namespace Compiler
 			{
 				PushBack(tokens, TokenType::Semicolon);
 				Consume();
+			}
+			else if (std::isdigit(Peek().value()))
+			{
+				buffer.push_back(Consume());
+				while (Peek().has_value() && std::isdigit(Peek().value()))
+				{
+					buffer.push_back(Consume());
+				}
+				PushBack(tokens, TokenType::IntegerLiteral, buffer);
+				buffer.clear();
 			}
 			else if (Peek().value() == '\n')
 			{

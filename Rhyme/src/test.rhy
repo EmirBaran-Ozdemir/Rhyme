@@ -1,32 +1,12 @@
-var b = 19;
+var b = 12;
 
-// var a = 33; 
-var a = 19;
-
-if(b <= a)
+var a = 12;
+if(!(!(!(a!=b))))
 {
-	exit(2);
-}
-
-if(a < b)
-{
-	var x = 31;
-}
-if (a<10) 
-{
-	var x = 41;
-}
-else if(b<10)
-{
-	var x = 51;
-}
-else if(a<8)
-{
-	var x = 61;
+	exit(b);
 }
 else
 {
-	exit(1);
+	exit(3);
 }
-
-exit(5);
+exit(2);

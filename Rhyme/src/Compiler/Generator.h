@@ -72,7 +72,7 @@ namespace Compiler {
 		bool m_StatementIf;
 		std::vector<Variable> m_VariableList{};
 		std::vector<size_t> m_Scopes{};
-		
-	
+
+
 	};
 }

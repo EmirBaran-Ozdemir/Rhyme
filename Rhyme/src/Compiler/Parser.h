@@ -3,6 +3,9 @@
 #include "MemoryPool.h"
 
 namespace Node {
+	struct Expr;
+	struct Statement;
+
 	struct TermIntLit {
 		Token intLit;
 	};
@@ -11,10 +14,16 @@ namespace Node {
 		Token ident;
 	};
 
-	struct Expr;
-	struct Statement;
 	struct TermParenthesis {
 		Expr* expr;
+	};
+
+	struct TermUnary {
+		Expr* expr;
+	};
+
+	struct Term {
+		std::variant<TermIdent*, TermIntLit*, TermParenthesis*, TermUnary*> var;
 	};
 
 	struct BinExprAddition {
@@ -52,6 +61,11 @@ namespace Node {
 		Expr* rhs;
 	};
 
+	struct BinExprNotEqual {
+		Expr* lhs;
+		Expr* rhs;
+	};
+
 	struct BinExprLessThanOrEqual {
 		Expr* lhs;
 		Expr* rhs;
@@ -63,13 +77,9 @@ namespace Node {
 	};
 
 	struct BinExpr {
-		std::variant<BinExprAddition*, BinExprMultiplication*, BinExprSubtraction*, BinExprDivision*, BinExprLessThan*, BinExprGreaterThan*, BinExprEqual*, BinExprLessThanOrEqual*, BinExprGreaterThanOrEqual*> binExprType;
+		std::variant<BinExprAddition*, BinExprMultiplication*, BinExprSubtraction*, BinExprDivision*, BinExprLessThan*, BinExprGreaterThan*, BinExprEqual*, BinExprNotEqual*, BinExprLessThanOrEqual*, BinExprGreaterThanOrEqual*> binExprType;
 	};
-
-	struct Term {
-		std::variant<TermIdent*, TermIntLit*, TermParenthesis*> var;
-	};
-
+	
 	struct Expr {
 		std::variant<Term*, BinExpr*> var;
 	};
@@ -117,18 +127,18 @@ namespace Compiler
 	{
 	public:
 		Parser(const std::vector<Token>& tokens);
-		std::optional<Node::Expr*> ParseExpr(int minPrecedence = 0);
-		std::optional<Node::Term*> ParseTerm();
+		std::optional<Node::Expr*> ParseExpr(int minPrecedence = 0, bool unary = false);
+		std::optional<Node::Term*> ParseTerm(bool unary);
 		std::optional<Node::StatementScope*> ParseScope();
 		std::optional<Node::Statement*> ParseStatement();
 		std::optional<Node::StatementIf*> ParseStatementIf();
 		std::optional<Node::Program> ParseProgram();
+		void InvertExpression(Node::BinExpr* expr);
 	private:
 		std::optional<Token> Peek(int offset = 0) const;
 		Token Consume();
 		const bool Check(TokenType type, int offset) const;
 		const bool FalseCheck(TokenType type) const;
-
 		operator std::string() { return m_Tokens[m_Index].value.value_or(""); }
 		void ThrowError(const std::string& message);
 		void ThrowError(const std::string& message, const std::string& expression);
