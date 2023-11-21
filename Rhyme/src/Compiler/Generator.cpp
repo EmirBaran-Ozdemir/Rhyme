@@ -1,7 +1,6 @@
 #include "rhypch.h"
 #include "Generator.h"
 
-
 namespace Compiler {
 
 	Generator::Generator(const Node::Program& program, bool enableDebug)
@@ -41,7 +40,7 @@ namespace Compiler {
 			}
 			void operator()(const Node::TermUnary* termUnary) const
 			{
-				gen->GenerateExpression(termUnary->expr);
+				//gen->GenerateExpression(termUnary->expr);
 			}
 
 		};
@@ -265,11 +264,11 @@ namespace Compiler {
 
 	void Generator::ThrowError(const std::string& message)
 	{
-		throw std::invalid_argument("ERROR::PARSER::" + message);
+		//throw std::invalid_argument(fmt::format("ERROR::PARSER::{}", message));
 	}
 	void Generator::ThrowError(const std::string& message, const std::string& ident)
 	{
-		throw std::invalid_argument("ERROR::PARSER::" + message + " : " + ident);
+		//throw std::invalid_argument(fmt::format("ERROR::PARSER::{} : {}", message,ident));
 	}
 	void Generator::DebugMessage(const std::string& message)
 	{

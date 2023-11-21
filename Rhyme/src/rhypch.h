@@ -1,5 +1,9 @@
 #pragma once
 
+//. Utils
+#include "Utils/ExceptionHandler.h" 
+#include "Utils/PlatformDetection.h" 
+
 //. Basics
 #include <iostream>
 #include <fstream>
@@ -15,9 +19,12 @@
 #include <unordered_map>
 #include <map>
 
-//. Exceptions
-#include <stdexcept>
-#include <cassert>
-
 //. Shell
-#include <unistd.h>
+#ifdef RHY_PLATFORM_WINDOWS
+	#include <Windows.h>
+
+#elif defined RHY_PLATFORM_LINUX
+	#include <sys/ioctl.h>
+	#include <termios.h>
+	#include <unistd.h>
+#endif

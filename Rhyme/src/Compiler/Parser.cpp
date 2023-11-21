@@ -57,7 +57,7 @@ namespace Compiler {
 			int nextMinPrec = precedence.value() + 1;
 			auto exprRhs = ParseExpr(nextMinPrec);
 			if (!exprRhs.has_value())
-				ThrowError("No right hand side");
+				THROW_ERROR("No right hand side");
 
 			auto binExpr = m_Pool.Allocate<Node::BinExpr>();
 			auto exprLhsTemp = m_Pool.Allocate<Node::Expr>();
@@ -71,10 +71,10 @@ namespace Compiler {
 			if (unary)
 			{
 				auto invertedToken = Tokenizer::InvertToken(op.type);
-				if(invertedToken.has_value())
+				if (invertedToken.has_value())
 					op.type = invertedToken.value();
 				else
-					ThrowError("Invalid unary operator");
+					THROW_ERROR("Invalid unary operator");
 			}
 			switch (op.type) {
 				case TokenType::Plus:
@@ -137,13 +137,13 @@ namespace Compiler {
 		else if (Check(TokenType::OpenParenthesis))
 		{
 			Consume(); // Consume '('
-			auto expr = ParseExpr(0,unary);
+			auto expr = ParseExpr(0, unary);
 			if (!expr.has_value())
-				ThrowError("Expected expression");
+				THROW_ERROR("Expected expression");
 			if (Check(TokenType::CloseParenthesis))
 				Consume(); // Consume ')'
 			else
-				ThrowError("Missing ')'");
+				THROW_ERROR("Missing ')'");
 			auto termParenthesis = m_Pool.Allocate<Node::TermParenthesis>();
 			termParenthesis->expr = expr.value();
 			return createTerm(termParenthesis);
@@ -156,14 +156,14 @@ namespace Compiler {
 				unary = unary ? false : true;
 				auto expr = ParseExpr(0, unary);
 				if (!expr.has_value())
-					ThrowError("Expected expression");
+					THROW_ERROR("Expected expression");
 
 				auto termUnary = m_Pool.Allocate<Node::TermUnary>();
 				termUnary->expr = expr.value();
 				return createTerm(termUnary);
 			}
 			else
-				ThrowError("Missing ')'");
+				THROW_ERROR("Missing ')'");
 		}
 		else
 			return std::nullopt;
@@ -172,7 +172,7 @@ namespace Compiler {
 	std::optional<Node::StatementScope*> Parser::ParseScope()
 	{
 		if (FalseCheck(TokenType::OpenCurlyParenthesis))
-			ThrowError("Missing open curly parenthesis");
+			THROW_ERROR("Missing open curly parenthesis");
 		Consume(); // Consume '{'
 		auto scopeStatement = m_Pool.Allocate<Node::StatementScope>();
 		while (auto statement = ParseStatement())
@@ -180,7 +180,7 @@ namespace Compiler {
 			scopeStatement->statement.push_back(statement.value());
 		}
 		if (FalseCheck(TokenType::CloseCurlyParenthesis))
-			ThrowError("Missing close curly parenthesis");
+			THROW_ERROR("Missing close curly parenthesis");
 		Consume(); // Consume '}'
 		return scopeStatement;
 	}
@@ -192,7 +192,7 @@ namespace Compiler {
 			Consume(); // Consume 'exit'
 
 			if (FalseCheck(TokenType::OpenParenthesis))
-				ThrowError("Missing open parenthesis");
+				THROW_ERROR("Missing open parenthesis");
 
 			Consume(); // Consume '('
 
@@ -201,16 +201,16 @@ namespace Compiler {
 			auto expr = ParseExpr();
 
 			if (!expr.has_value())
-				ThrowError("Invalid expression", *this);
+				THROW_ERROR("Invalid expression");
 
 			exitStatement->expr = expr.value();
 
 			if (FalseCheck(TokenType::CloseParenthesis))
-				ThrowError("Missing close parenthesis");
+				THROW_ERROR("Missing close parenthesis");
 
 			Consume(); // Consume ')'
 			if (FalseCheck(TokenType::Semicolon))
-				ThrowError("Missing semicolon");
+				THROW_ERROR("Missing semicolon");
 			Consume(); // Consume ';'
 
 			statement->var = exitStatement;
@@ -226,10 +226,10 @@ namespace Compiler {
 			auto expr = ParseExpr(); // Parse and consume the expression
 
 			if (!expr.has_value())
-				ThrowError("Invalid expression", *this);
+				THROW_ERROR("Invalid expression");
 
 			if (FalseCheck(TokenType::Semicolon))
-				ThrowError("Missing semicolon");
+				THROW_ERROR("Missing semicolon");
 			Consume(); // Consume ';'
 			varStatement->expr = expr.value();
 			statement->var = varStatement;
@@ -241,23 +241,23 @@ namespace Compiler {
 			Consume(); // Consume 'if'
 
 			if (FalseCheck(TokenType::OpenParenthesis))
-				ThrowError("Missing open parenthesis");
+				THROW_ERROR("Missing open parenthesis");
 			Consume(); // Consume '('
 
 			auto expr = ParseExpr();
 			if (!expr.has_value())
-				ThrowError("Invalid expression", *this);
+				THROW_ERROR("Invalid expression");
 
 			ifStatement->expr = expr.value();
 
 			if (FalseCheck(TokenType::CloseParenthesis))
-				ThrowError("Missing close parenthesis");
+				THROW_ERROR("Missing close parenthesis");
 			Consume(); // Consume ')'
 
 			if (auto scope = ParseScope())
 				ifStatement->scope = scope.value();
 			else
-				ThrowError("Expected scope");
+				THROW_ERROR("Expected scope");
 
 			if (Check(TokenType::Else))
 			{
@@ -270,7 +270,7 @@ namespace Compiler {
 		{
 			auto index = m_PrevStatement.value()->var.index();
 			if (!std::holds_alternative<Node::StatementIf*>(m_PrevStatement.value()->var) && !std::holds_alternative<Node::StatementElseIf*>(m_PrevStatement.value()->var))
-				ThrowError("If statement required before else statement");
+				THROW_ERROR("If statement required before else statement");
 
 			Consume(); // Consume 'else'
 			if (Check(TokenType::If))
@@ -280,23 +280,23 @@ namespace Compiler {
 				Consume(); // Consume 'if'
 
 				if (FalseCheck(TokenType::OpenParenthesis))
-					ThrowError("Missing open parenthesis");
+					THROW_ERROR("Missing open parenthesis");
 				Consume(); // Consume '('
 
 				auto expr = ParseExpr();
 				if (!expr.has_value())
-					ThrowError("Invalid expression", *this);
+					THROW_ERROR("Invalid expression");
 
 				ifStatement->expr = expr.value();
 
 				if (FalseCheck(TokenType::CloseParenthesis))
-					ThrowError("Missing close parenthesis");
+					THROW_ERROR("Missing close parenthesis");
 				Consume(); // Consume ')'
 
 				if (auto scope = ParseScope())
 					ifStatement->scope = scope.value();
 				else
-					ThrowError("Expected scope");
+					THROW_ERROR("Expected scope");
 
 				if (Check(TokenType::Else))
 				{
@@ -310,7 +310,7 @@ namespace Compiler {
 				if (auto scope = ParseScope())
 					elseStatement->scope = scope.value();
 				else
-					ThrowError("Expected scope");
+					THROW_ERROR("Expected scope");
 				statement->var = elseStatement;
 			}
 		}
@@ -322,7 +322,7 @@ namespace Compiler {
 				return statement;
 			}
 			else
-				ThrowError("Invalid scope");
+				THROW_ERROR("Invalid scope");
 		}
 		else
 			return std::nullopt;
@@ -340,17 +340,17 @@ namespace Compiler {
 			if (statement.has_value())
 				program.statement.push_back(statement.value());
 			else
-				ThrowError("Invalid statement");
+				THROW_ERROR("Invalid statement");
 		}
 		return program;
 	}
 
-	void Parser::ThrowError(const std::string& message)
-	{
-		throw std::invalid_argument("ERROR::PARSER::" + message + " at line: " + std::to_string(m_Tokens[m_Index].line) + " at position: " + std::to_string(m_Tokens[m_Index].position));
-	}
-	void Parser::ThrowError(const std::string& message, const std::string& expression)
-	{
-		throw std::invalid_argument("ERROR::PARSER::" + message + " " + expression + " at line: " + std::to_string(m_Tokens[m_Index].line) + " at position: " + std::to_string(m_Tokens[m_Index].position));
-	}
+	//void Parser::Handler::Exception::ThrowError(const std::string& message)
+	//{
+	//	throw std::invalid_argument(fmt::format("ERROR::PARSER::{} at line: {} at position: {}", message, m_Tokens[m_Index].line, m_Tokens[m_Index].position));
+	//}
+	//void Parser::Handler::Exception::ThrowError(const std::string& message, const std::string& expression)
+	//{
+	//	throw std::invalid_argument(fmt::format("ERROR::PARSER::{} {} at line: {} at position: {}", message, expression, m_Tokens[m_Index].line, m_Tokens[m_Index].position));
+	//}
 }

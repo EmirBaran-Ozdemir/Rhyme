@@ -245,7 +245,7 @@ namespace Compiler
 			}
 			else
 			{
-				throw std::invalid_argument("ERROR::TOKENIZER::Unexpected character '" + std::string(1, m_Source[m_Index]) + "' at line: " + std::to_string(m_CurrentLine) + ", position: " + std::to_string(m_CurrentPosition));
+				THROW_ERROR("Unexpected character %c at line: %d, at position: %d", m_Source[m_Index], m_CurrentLine, m_CurrentPosition);
 			}
 		}
 		m_Index = 0;

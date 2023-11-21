@@ -5,7 +5,7 @@
 namespace Node {
 	struct Expr;
 	struct Statement;
-
+	struct Term;
 	struct TermIntLit {
 		Token intLit;
 	};
@@ -19,6 +19,7 @@ namespace Node {
 	};
 
 	struct TermUnary {
+		//std::variant<Expr*, Term*> expr;
 		Expr* expr;
 	};
 
@@ -70,7 +71,7 @@ namespace Node {
 		Expr* lhs;
 		Expr* rhs;
 	};
-	
+
 	struct BinExprGreaterThanOrEqual {
 		Expr* lhs;
 		Expr* rhs;
@@ -79,7 +80,7 @@ namespace Node {
 	struct BinExpr {
 		std::variant<BinExprAddition*, BinExprMultiplication*, BinExprSubtraction*, BinExprDivision*, BinExprLessThan*, BinExprGreaterThan*, BinExprEqual*, BinExprNotEqual*, BinExprLessThanOrEqual*, BinExprGreaterThanOrEqual*> binExprType;
 	};
-	
+
 	struct Expr {
 		std::variant<Term*, BinExpr*> var;
 	};
@@ -96,13 +97,13 @@ namespace Node {
 	struct StatementScope {
 		std::vector<Statement*> statement;
 	};
-	
+
 	struct StatementIf {
 		Expr* expr;
 		StatementScope* scope;
 		bool hasElse;
 	};
-	
+
 	struct StatementElseIf {
 		Expr* expr;
 		StatementScope* scope;
@@ -114,7 +115,7 @@ namespace Node {
 	};
 
 	struct Statement {
-		std::variant<StatementExit*, StatementVar*, StatementIf*,StatementElseIf*, StatementElse*, StatementScope*> var;
+		std::variant<StatementExit*, StatementVar*, StatementIf*, StatementElseIf*, StatementElse*, StatementScope*> var;
 	};
 
 	struct Program {
@@ -131,17 +132,14 @@ namespace Compiler
 		std::optional<Node::Term*> ParseTerm(bool unary);
 		std::optional<Node::StatementScope*> ParseScope();
 		std::optional<Node::Statement*> ParseStatement();
-		std::optional<Node::StatementIf*> ParseStatementIf();
 		std::optional<Node::Program> ParseProgram();
-		void InvertExpression(Node::BinExpr* expr);
 	private:
 		std::optional<Token> Peek(int offset = 0) const;
 		Token Consume();
 		const bool Check(TokenType type, int offset) const;
 		const bool FalseCheck(TokenType type) const;
 		operator std::string() { return m_Tokens[m_Index].value.value_or(""); }
-		void ThrowError(const std::string& message);
-		void ThrowError(const std::string& message, const std::string& expression);
+		operator int() { return m_Index; }
 	private:
 		int m_Index = 0;
 		std::optional<Node::Statement*> m_PrevStatement;

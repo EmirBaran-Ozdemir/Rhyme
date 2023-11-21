@@ -12,7 +12,9 @@ project ("Rhyme")
 
 file(GLOB COMPILER_SOURCE_FILES "Rhyme/src/Compiler/*.cpp")
 
-file(GLOB COMPILER_HEADER_FILES "Rhyme/src/Compiler/*.h")
+file(GLOB COMPILER_HEADER_FILES "Rhyme/src/Compiler/*.h" "Rhyme/src/Utils/*.h")
+
+add_subdirectory("vendor/fmt")
 
 add_executable(Rhyme
     "Rhyme/src/Rhyme.cpp"
@@ -25,5 +27,6 @@ set(CMAKE_PCH_INSTANTIATE_TEMPLATES ON)
 target_precompile_headers(Rhyme PUBLIC "Rhyme/src/rhypch.h")
 
 target_include_directories(Rhyme PUBLIC "Rhyme/src")
+target_include_directories(Rhyme PUBLIC "vendor/fmt/include")
 
 set_target_properties(Rhyme PROPERTIES OUTPUT_NAME "Rhyme")

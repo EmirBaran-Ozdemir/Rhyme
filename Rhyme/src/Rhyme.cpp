@@ -83,8 +83,7 @@ int main(int argc, char* argv[])
 			std::system("rm out.o");
 			std::system("rm out.asm");
 		}
-		std::cout << "Exit Status: " << WEXITSTATUS(exitCode) << std::endl;
-
+		std::cout << "Exit Status: " << exitCode << std::endl;
 	}
 	catch (std::invalid_argument& err)
 	{
