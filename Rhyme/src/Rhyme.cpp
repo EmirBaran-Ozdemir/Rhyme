@@ -31,7 +31,8 @@ int main(int argc, char* argv[])
 			}
 		}
 	}
-
+	std::string s = fmt::format("Enable Debug = {}\nEnable Clean = {}\n",paramDebug,paramClean);
+	std::cout << s;
 	if (!input_file.is_open())
 	{
 		std::cerr << "ERROR::FILE_NOT_FOUND" << std::endl;
@@ -83,7 +84,11 @@ int main(int argc, char* argv[])
 			std::system("rm out.o");
 			std::system("rm out.asm");
 		}
+	#ifdef RHY_PLATFORM_WINDOWS
 		std::cout << "Exit Status: " << exitCode << std::endl;
+	#elif defined RHY_PLATFORM_LINUX
+		std::cout << "Exit Status: " << WEXITSTATUS(exitCode) << std::endl;
+	#endif
 	}
 	catch (std::invalid_argument& err)
 	{

@@ -24,7 +24,7 @@ namespace Compiler {
 					});
 				if (it == gen->m_VariableList.cend())
 				{
-					gen->ThrowError("Identifier is not declared", termIdent->ident.value.value());
+					THROW_ERROR_ARGS("Identifier is not declared", termIdent->ident.value.value());
 				}
 
 				std::stringstream offset;
@@ -158,7 +158,7 @@ namespace Compiler {
 					});
 				if (it != gen->m_VariableList.cend())
 				{
-					gen->ThrowError("Identifier already declared", statementVar->ident.value.value());
+					THROW_ERROR_ARGS("Identifier already declared", statementVar->ident.value.value());
 				}
 				gen->m_VariableList.push_back({ .name = statementVar->ident.value.value(), .stackLocation = gen->m_StackSize });
 				gen->GenerateExpression(statementVar->expr);
@@ -262,14 +262,6 @@ namespace Compiler {
 		m_Scopes.pop_back();
 	}
 
-	void Generator::ThrowError(const std::string& message)
-	{
-		//throw std::invalid_argument(fmt::format("ERROR::PARSER::{}", message));
-	}
-	void Generator::ThrowError(const std::string& message, const std::string& ident)
-	{
-		//throw std::invalid_argument(fmt::format("ERROR::PARSER::{} : {}", message,ident));
-	}
 	void Generator::DebugMessage(const std::string& message)
 	{
 		if (m_EnableDebug)

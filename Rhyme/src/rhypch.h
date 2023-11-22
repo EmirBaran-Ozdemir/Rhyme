@@ -1,9 +1,5 @@
 #pragma once
 
-//. Utils
-#include "Utils/ExceptionHandler.h" 
-#include "Utils/PlatformDetection.h" 
-
 //. Basics
 #include <iostream>
 #include <fstream>
@@ -28,3 +24,9 @@
 	#include <termios.h>
 	#include <unistd.h>
 #endif
+
+//. Vendor
+#include <fmt/core.h>
+#include <fmt/format.h>
+
+#include "Core/Core.h"

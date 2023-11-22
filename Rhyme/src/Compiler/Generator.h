@@ -56,9 +56,6 @@ namespace Compiler {
 		void BeginScope();
 		void EndScope();
 
-		void ThrowError(const std::string& message);
-		void ThrowError(const std::string& message, const std::string& ident);
-
 		void DebugMessage(const std::string& message);
 	private:
 		const Node::Program m_Program;

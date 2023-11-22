@@ -23,12 +23,12 @@ namespace Compiler
 
 	void Tokenizer::PushBack(std::vector<Token>& tokens, TokenType tokenType)
 	{
-		tokens.push_back({ .type = tokenType, .line = m_CurrentLine, .position = m_CurrentPosition });
+		tokens.push_back({ .type = tokenType, .line = m_CurrentLine, .position = m_CurrentPosition - 1 });
 	}
 
 	void Tokenizer::PushBack(std::vector<Token>& tokens, TokenType tokenType, std::string& buffer)
 	{
-		tokens.push_back({ .type = tokenType, .value = buffer, .line = m_CurrentLine, .position = m_CurrentPosition });
+		tokens.push_back({ .type = tokenType, .value = buffer, .line = m_CurrentLine, .position = m_CurrentPosition - 1 });
 	}
 
 	bool Tokenizer::IsBinOperator(TokenType type)
@@ -46,9 +46,8 @@ namespace Compiler
 			case TokenType::Minus:			return true;
 			case TokenType::Star:			return true;
 			case TokenType::Slash:			return true;
-
-			default: return false;
 		}
+		return false;
 	}
 
 	std::optional<int> Tokenizer::GetBinaryPrecedence(TokenType type)
@@ -66,8 +65,8 @@ namespace Compiler
 			case TokenType::Star:			return 2;
 			case TokenType::Slash:			return 2;
 			case TokenType::Exclamation:	return 3;
-			default: return std::nullopt;
 		}
+		return std::nullopt;
 	}
 
 	std::optional<TokenType> Tokenizer::InvertToken(TokenType type)
@@ -83,8 +82,6 @@ namespace Compiler
 		}
 		return std::nullopt;
 	}
-
-
 
 	std::vector<Token> Tokenizer::Tokenize(std::string source)
 	{
@@ -245,7 +242,7 @@ namespace Compiler
 			}
 			else
 			{
-				THROW_ERROR("Unexpected character %c at line: %d, at position: %d", m_Source[m_Index], m_CurrentLine, m_CurrentPosition);
+				THROW_ERROR_ARGS("Unexpected character {} at line: {}, at position: {}", m_Source[m_Index], m_CurrentLine, m_CurrentPosition);
 			}
 		}
 		m_Index = 0;

@@ -133,13 +133,21 @@ namespace Compiler
 		std::optional<Node::StatementScope*> ParseScope();
 		std::optional<Node::Statement*> ParseStatement();
 		std::optional<Node::Program> ParseProgram();
+
+		//. Statement Parsers
+		void ParseExitStatement(Node::Statement* statement);
+		void ParseVarStatement(Node::Statement* statement);
+		void ParseIfStatement(Node::Statement* statement);
+		void ParseElseStatement(Node::Statement* statement);
+		void ParseElseIfStatement(Node::Statement* statement);
+		void ParseElseStatementBody(Node::Statement* statement);
+		void ParseScopeStatement(Node::Statement* statement);
 	private:
 		std::optional<Token> Peek(int offset = 0) const;
 		Token Consume();
 		const bool Check(TokenType type, int offset) const;
 		const bool FalseCheck(TokenType type) const;
 		operator std::string() { return m_Tokens[m_Index].value.value_or(""); }
-		operator int() { return m_Index; }
 	private:
 		int m_Index = 0;
 		std::optional<Node::Statement*> m_PrevStatement;

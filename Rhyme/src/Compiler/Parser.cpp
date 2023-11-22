@@ -57,7 +57,7 @@ namespace Compiler {
 			int nextMinPrec = precedence.value() + 1;
 			auto exprRhs = ParseExpr(nextMinPrec);
 			if (!exprRhs.has_value())
-				THROW_ERROR("No right hand side");
+				THROW_ERROR_ARGS("No right hand side at line {}, at position {}", m_Tokens[m_Index].line, m_Tokens[m_Index].position);
 
 			auto binExpr = m_Pool.Allocate<Node::BinExpr>();
 			auto exprLhsTemp = m_Pool.Allocate<Node::Expr>();
@@ -74,7 +74,7 @@ namespace Compiler {
 				if (invertedToken.has_value())
 					op.type = invertedToken.value();
 				else
-					THROW_ERROR("Invalid unary operator");
+					THROW_ERROR_ARGS("Invalid unary operator at line {}, at position {}",m_Tokens[m_Index].line,m_Tokens[m_Index].position);
 			}
 			switch (op.type) {
 				case TokenType::Plus:
@@ -139,11 +139,11 @@ namespace Compiler {
 			Consume(); // Consume '('
 			auto expr = ParseExpr(0, unary);
 			if (!expr.has_value())
-				THROW_ERROR("Expected expression");
+				THROW_ERROR_ARGS("Expected expression at line {}, at position {}",m_Tokens[m_Index].line,m_Tokens[m_Index].position);
 			if (Check(TokenType::CloseParenthesis))
 				Consume(); // Consume ')'
 			else
-				THROW_ERROR("Missing ')'");
+				THROW_ERROR_ARGS("Missing ')' at line {}, at position {}", m_Tokens[m_Index].line,m_Tokens[m_Index].position);
 			auto termParenthesis = m_Pool.Allocate<Node::TermParenthesis>();
 			termParenthesis->expr = expr.value();
 			return createTerm(termParenthesis);
@@ -156,32 +156,36 @@ namespace Compiler {
 				unary = unary ? false : true;
 				auto expr = ParseExpr(0, unary);
 				if (!expr.has_value())
-					THROW_ERROR("Expected expression");
+					THROW_ERROR_ARGS("Expected expression at line {}, at position {}",m_Tokens[m_Index].line,m_Tokens[m_Index].position);
 
 				auto termUnary = m_Pool.Allocate<Node::TermUnary>();
 				termUnary->expr = expr.value();
 				return createTerm(termUnary);
 			}
 			else
-				THROW_ERROR("Missing ')'");
+				THROW_ERROR_ARGS("Missing ')' at line {}, at position {}",m_Tokens[m_Index].line,m_Tokens[m_Index].position);
 		}
 		else
 			return std::nullopt;
+		return std::nullopt;
 	}
 
 	std::optional<Node::StatementScope*> Parser::ParseScope()
 	{
 		if (FalseCheck(TokenType::OpenCurlyParenthesis))
-			THROW_ERROR("Missing open curly parenthesis");
+			THROW_ERROR_ARGS("Missing open curly parenthesis at line {}, at position {}", m_Tokens[m_Index].line,m_Tokens[m_Index].position);
 		Consume(); // Consume '{'
+
 		auto scopeStatement = m_Pool.Allocate<Node::StatementScope>();
 		while (auto statement = ParseStatement())
 		{
 			scopeStatement->statement.push_back(statement.value());
 		}
+
 		if (FalseCheck(TokenType::CloseCurlyParenthesis))
-			THROW_ERROR("Missing close curly parenthesis");
+			THROW_ERROR_ARGS("Missing close curly parenthesis at line {}, at position {}", m_Tokens[m_Index].line,m_Tokens[m_Index].position);
 		Consume(); // Consume '}'
+
 		return scopeStatement;
 	}
 
@@ -189,148 +193,172 @@ namespace Compiler {
 		auto statement = m_Pool.Allocate<Node::Statement>();
 
 		if (Check(TokenType::Exit)) {
-			Consume(); // Consume 'exit'
-
-			if (FalseCheck(TokenType::OpenParenthesis))
-				THROW_ERROR("Missing open parenthesis");
-
-			Consume(); // Consume '('
-
-			auto exitStatement = m_Pool.Allocate<Node::StatementExit>();
-
-			auto expr = ParseExpr();
-
-			if (!expr.has_value())
-				THROW_ERROR("Invalid expression");
-
-			exitStatement->expr = expr.value();
-
-			if (FalseCheck(TokenType::CloseParenthesis))
-				THROW_ERROR("Missing close parenthesis");
-
-			Consume(); // Consume ')'
-			if (FalseCheck(TokenType::Semicolon))
-				THROW_ERROR("Missing semicolon");
-			Consume(); // Consume ';'
-
-			statement->var = exitStatement;
+			ParseExitStatement(statement);
 		}
 		else if (Check(TokenType::Variable) && Check(TokenType::Ident, 1) && Check(TokenType::Assign, 2)) {
-			Consume(); // Consume 'var'
-
-			auto varStatement = m_Pool.Allocate<Node::StatementVar>();
-
-			varStatement->ident = Consume(); // Consume identifier
-			Consume(); // Consume '='
-
-			auto expr = ParseExpr(); // Parse and consume the expression
-
-			if (!expr.has_value())
-				THROW_ERROR("Invalid expression");
-
-			if (FalseCheck(TokenType::Semicolon))
-				THROW_ERROR("Missing semicolon");
-			Consume(); // Consume ';'
-			varStatement->expr = expr.value();
-			statement->var = varStatement;
+			ParseVarStatement(statement);
 		}
-		else if (Check(TokenType::If))
-		{
-			auto ifStatement = m_Pool.Allocate<Node::StatementIf>();
-
-			Consume(); // Consume 'if'
-
-			if (FalseCheck(TokenType::OpenParenthesis))
-				THROW_ERROR("Missing open parenthesis");
-			Consume(); // Consume '('
-
-			auto expr = ParseExpr();
-			if (!expr.has_value())
-				THROW_ERROR("Invalid expression");
-
-			ifStatement->expr = expr.value();
-
-			if (FalseCheck(TokenType::CloseParenthesis))
-				THROW_ERROR("Missing close parenthesis");
-			Consume(); // Consume ')'
-
-			if (auto scope = ParseScope())
-				ifStatement->scope = scope.value();
-			else
-				THROW_ERROR("Expected scope");
-
-			if (Check(TokenType::Else))
-			{
-				ifStatement->hasElse = true;
-			}
-			statement->var = ifStatement;
+		else if (Check(TokenType::If)) {
+			ParseIfStatement(statement);
 		}
-
-		else if (Check(TokenType::Else))
-		{
-			auto index = m_PrevStatement.value()->var.index();
-			if (!std::holds_alternative<Node::StatementIf*>(m_PrevStatement.value()->var) && !std::holds_alternative<Node::StatementElseIf*>(m_PrevStatement.value()->var))
-				THROW_ERROR("If statement required before else statement");
-
-			Consume(); // Consume 'else'
-			if (Check(TokenType::If))
-			{
-				auto ifStatement = m_Pool.Allocate<Node::StatementElseIf>();
-
-				Consume(); // Consume 'if'
-
-				if (FalseCheck(TokenType::OpenParenthesis))
-					THROW_ERROR("Missing open parenthesis");
-				Consume(); // Consume '('
-
-				auto expr = ParseExpr();
-				if (!expr.has_value())
-					THROW_ERROR("Invalid expression");
-
-				ifStatement->expr = expr.value();
-
-				if (FalseCheck(TokenType::CloseParenthesis))
-					THROW_ERROR("Missing close parenthesis");
-				Consume(); // Consume ')'
-
-				if (auto scope = ParseScope())
-					ifStatement->scope = scope.value();
-				else
-					THROW_ERROR("Expected scope");
-
-				if (Check(TokenType::Else))
-				{
-					ifStatement->hasElse = true;
-				}
-				statement->var = ifStatement;
-			}
-			else
-			{
-				auto elseStatement = m_Pool.Allocate<Node::StatementElse>();
-				if (auto scope = ParseScope())
-					elseStatement->scope = scope.value();
-				else
-					THROW_ERROR("Expected scope");
-				statement->var = elseStatement;
-			}
+		else if (Check(TokenType::Else)) {
+			ParseElseStatement(statement);
 		}
-		else if (Check(TokenType::OpenCurlyParenthesis)) //! Scope
-		{
-			if (auto scopeStatement = ParseScope())
-			{
-				statement->var = scopeStatement.value();
-				return statement;
-			}
-			else
-				THROW_ERROR("Invalid scope");
+		else if (Check(TokenType::OpenCurlyParenthesis)) { // Scope
+			ParseScopeStatement(statement);
 		}
-		else
+		else {
 			return std::nullopt;
+		}
 
 		Node::Statement* retStatement = new Node::Statement{ .var = statement->var };
 		m_PrevStatement = retStatement;
 		return retStatement;
 	}
+
+	void Parser::ParseExitStatement(Node::Statement* statement)
+	{
+		Consume(); // Consume 'exit'
+
+		if (FalseCheck(TokenType::OpenParenthesis))
+			THROW_ERROR_ARGS("Missing open parenthesis at line {}, at position {}", m_Tokens[m_Index].line,m_Tokens[m_Index].position);
+		Consume(); // Consume '('
+
+		auto exitStatement = m_Pool.Allocate<Node::StatementExit>();
+		auto expr = ParseExpr();
+
+		if (!expr.has_value())
+			THROW_ERROR_ARGS("Invalid expression at line {}, at position {}", m_Tokens[m_Index].line,m_Tokens[m_Index].position);
+		exitStatement->expr = expr.value();
+
+		if (FalseCheck(TokenType::CloseParenthesis))
+			THROW_ERROR_ARGS("Missing close parenthesis at line {}, at position {}", m_Tokens[m_Index].line,m_Tokens[m_Index].position);
+		Consume(); // Consume ')'
+
+		if (FalseCheck(TokenType::Semicolon))
+			THROW_ERROR_ARGS("Missing semicolon at line {}, at position {}", m_Tokens[m_Index].line,m_Tokens[m_Index].position);
+		Consume(); // Consume ';'
+
+		statement->var = exitStatement;
+	}
+
+	void Parser::ParseVarStatement(Node::Statement* statement) {
+		Consume(); // Consume 'var'
+
+		auto varStatement = m_Pool.Allocate<Node::StatementVar>();
+		varStatement->ident = Consume(); // Consume identifier
+		Consume(); // Consume '='
+
+		auto expr = ParseExpr(); // Parse and consume the expression
+		if (!expr.has_value())
+			THROW_ERROR_ARGS("Invalid expression at line {}, at position {}", m_Tokens[m_Index].line,m_Tokens[m_Index].position);
+
+		if (FalseCheck(TokenType::Semicolon))
+			THROW_ERROR_ARGS("Missing semicolon at line {}, at position {}", m_Tokens[m_Index].line,m_Tokens[m_Index].position);
+		Consume(); // Consume ';'
+
+		varStatement->expr = expr.value();
+		statement->var = varStatement;
+	}
+
+	void Parser::ParseIfStatement(Node::Statement* statement) {
+		auto ifStatement = m_Pool.Allocate<Node::StatementIf>();
+		Consume(); // Consume 'if'
+
+		if (FalseCheck(TokenType::OpenParenthesis))
+			THROW_ERROR_ARGS("Missing open parenthesis at line {}, at position {}",m_Tokens[m_Index].line,m_Tokens[m_Index].position);
+		Consume(); // Consume '('
+
+		auto expr = ParseExpr();
+
+		if (!expr.has_value())
+			THROW_ERROR_ARGS("Invalid expression at line {}, at position {}",m_Tokens[m_Index].line,m_Tokens[m_Index].position);
+		ifStatement->expr = expr.value();
+
+		if (FalseCheck(TokenType::CloseParenthesis))
+			THROW_ERROR_ARGS("Missing close parenthesis at line {}, at position {}", m_Tokens[m_Index].line,m_Tokens[m_Index].position);
+		Consume(); // Consume ')'
+
+		if (auto scope = ParseScope())
+			ifStatement->scope = scope.value();
+		else
+			THROW_ERROR_ARGS("Expected scope at line {}, at position {}", m_Tokens[m_Index].line,m_Tokens[m_Index].position);
+
+		if (Check(TokenType::Else)) {
+			ifStatement->hasElse = true;
+		}
+		statement->var = ifStatement;
+	}
+
+	void Parser::ParseElseStatement(Node::Statement* statement) {
+		auto index = m_PrevStatement.value()->var.index();
+
+		if (!std::holds_alternative<Node::StatementIf*>(m_PrevStatement.value()->var)
+			&& !std::holds_alternative<Node::StatementElseIf*>(m_PrevStatement.value()->var))
+			THROW_ERROR_ARGS("If statement required before else statement at line {}, at position {}", m_Tokens[m_Index].line,m_Tokens[m_Index].position);
+
+		Consume(); // Consume 'else'
+
+		if (Check(TokenType::If)) {
+			ParseElseIfStatement(statement);
+		}
+		else {
+			ParseElseStatementBody(statement);
+		}
+	}
+
+	void Parser::ParseElseIfStatement(Node::Statement* statement)
+	{
+		auto ifStatement = m_Pool.Allocate<Node::StatementElseIf>();
+		Consume(); // Consume 'if'
+
+		if (FalseCheck(TokenType::OpenParenthesis))
+			THROW_ERROR_ARGS("Missing open parenthesis at line {}, at position {}", m_Tokens[m_Index].line,m_Tokens[m_Index].position);
+		Consume(); // Consume '('
+
+		auto expr = ParseExpr();
+
+		if (!expr.has_value())
+			THROW_ERROR_ARGS("Invalid expression at line {}, at position {}", m_Tokens[m_Index].line,m_Tokens[m_Index].position);
+		ifStatement->expr = expr.value();
+
+		if (FalseCheck(TokenType::CloseParenthesis))
+			THROW_ERROR_ARGS("Missing close parenthesis at line {}, at position {}", m_Tokens[m_Index].line,m_Tokens[m_Index].position);
+		Consume(); // Consume ')'
+
+		if (auto scope = ParseScope())
+			ifStatement->scope = scope.value();
+		else
+			THROW_ERROR_ARGS("Expected scope at line {}, at position {}",m_Tokens[m_Index].line,m_Tokens[m_Index].position);
+
+		if (Check(TokenType::Else))
+		{
+			ifStatement->hasElse = true;
+		}
+
+		statement->var = ifStatement;
+	}
+
+	void Parser::ParseElseStatementBody(Node::Statement* statement) {
+		auto elseStatement = m_Pool.Allocate<Node::StatementElse>();
+
+		if (auto scope = ParseScope())
+			elseStatement->scope = scope.value();
+		else
+			THROW_ERROR_ARGS("Expected scope at line {}, at position {}", m_Tokens[m_Index].line,m_Tokens[m_Index].position);
+
+		statement->var = elseStatement;
+	}
+
+	void Parser::ParseScopeStatement(Node::Statement* statement) {
+		if (auto scopeStatement = ParseScope()) {
+			statement->var = scopeStatement.value();
+		}
+		else {
+			THROW_ERROR_ARGS("Invalid scope at line {}, at position {}", m_Tokens[m_Index].line,m_Tokens[m_Index].position);
+		}
+	}
+
 
 	std::optional<Node::Program> Parser::ParseProgram() {
 		Node::Program program;
@@ -340,17 +368,8 @@ namespace Compiler {
 			if (statement.has_value())
 				program.statement.push_back(statement.value());
 			else
-				THROW_ERROR("Invalid statement");
+				THROW_ERROR_ARGS("Invalid statement at line {}, at position {}",m_Tokens[m_Index].line,m_Tokens[m_Index].position);
 		}
 		return program;
 	}
-
-	//void Parser::Handler::Exception::ThrowError(const std::string& message)
-	//{
-	//	throw std::invalid_argument(fmt::format("ERROR::PARSER::{} at line: {} at position: {}", message, m_Tokens[m_Index].line, m_Tokens[m_Index].position));
-	//}
-	//void Parser::Handler::Exception::ThrowError(const std::string& message, const std::string& expression)
-	//{
-	//	throw std::invalid_argument(fmt::format("ERROR::PARSER::{} {} at line: {} at position: {}", message, expression, m_Tokens[m_Index].line, m_Tokens[m_Index].position));
-	//}
 }
