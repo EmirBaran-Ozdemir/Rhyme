@@ -1,6 +1,6 @@
 #pragma once
 #include "Tokenizer.h"
-#include "MemoryPool.h"
+#include "Core/MemoryPool.h"
 
 namespace Node {
 	struct Expr;
@@ -151,7 +151,7 @@ namespace Compiler
 	private:
 		int m_Index = 0;
 		std::optional<Node::Statement*> m_PrevStatement;
-		Resources::MemoryPool m_Pool;
+		Core::MemoryPool m_Pool;
 		const std::vector<Token> m_Tokens;
 	};
 }

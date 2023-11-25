@@ -1,9 +1,5 @@
 var b = 12;
 var a = 12;
-if()
-{
-	exit(b);
-}
 else
 {
 	exit(3);

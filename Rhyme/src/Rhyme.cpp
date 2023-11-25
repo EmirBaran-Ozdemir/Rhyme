@@ -7,7 +7,7 @@
 int main(int argc, char* argv[])
 {
 	std::string contents;
-	std::fstream input_file("/home/Emir/VisualStudio/Rhyme/Rhyme/src/test.rhy", std::ios::in);
+	std::fstream input_file("/home/Emir/VisualStudio/RhymeProject/Rhyme/src/test.rhy", std::ios::in);
 	bool paramDebug = false;
 	bool paramClean = false;
 	//if (argc < 2)
@@ -45,6 +45,11 @@ int main(int argc, char* argv[])
 		contents = buffer.str();
 		input_file.close();
 	}
+#ifdef RHY_ENABLE_DEBUG
+
+#elif defined RHY_ENABLE_RELEASE
+
+#endif // RHY_ENABLE_DEBUG
 
 	try
 	{

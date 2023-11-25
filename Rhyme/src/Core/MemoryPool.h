@@ -1,7 +1,7 @@
 #pragma once
 #include "rhypch.h"
 
-namespace Resources {
+namespace Core {
 
     class MemoryPool {
 

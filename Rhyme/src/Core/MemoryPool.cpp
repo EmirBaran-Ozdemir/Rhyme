@@ -1,7 +1,7 @@
 #include "rhypch.h"
 #include "MemoryPool.h"
 
-namespace Resources {
+namespace Core {
 
     MemoryPool::MemoryPool(size_t size)
         : m_Size(size) 
