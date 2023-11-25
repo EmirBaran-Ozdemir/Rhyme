@@ -1,7 +1,7 @@
 # Rhyme
 ## Rhyme Compiler for the Rhy Language
 
-## Overview:
+## RoadMap:
 
 <img src="https://github.com/EmirBaran-Ozdemir/Rhyme/blob/main/RhymeGoals.png" width='100%' height='100%' frameborder='0'>
 
